@@ -1,0 +1,112 @@
+<title>Money While You Sleep Storyboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700;900&display=block">
+<style>
+  /* Layout: a production storyboard sheet; two-column grid of 16:9 key frames, notes under each. Single deliberate dark look matching the piece. */
+  :root {
+    --bg: #0d0f33; --panel: #17154a; --line: #2e2a6e; --fg: #eeeaff; --muted: #b3aade; --gold: #ffd23f; --cyan: #7ff0ff; --pink: #ff8fb8;
+    --display: "Nunito", "Fredoka", system-ui, sans-serif; --body: "Nunito", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding-block: 32px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  header.top { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; justify-content: space-between; margin-bottom: 24px; }
+  h1 { font-family: var(--display); font-weight: 900; font-size: clamp(26px, 4vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; }
+  h1 em { color: var(--gold); font-style: normal; }
+  .meta { color: var(--muted); font-weight: 700; letter-spacing: 0.04em; font-size: 13px; text-transform: uppercase; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 540px), 1fr)); gap: 24px; }
+  .beat { background: var(--panel); border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+  .beat canvas { width: 100%; height: auto; aspect-ratio: 16 / 9; display: block; background: #090b2c; }
+  .notes { padding: 14px 18px 18px; display: grid; gap: 8px; }
+  .head { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+  .num { font-family: var(--display); font-weight: 900; font-size: 22px; color: var(--gold); }
+  .name { font-weight: 900; font-size: 17px; }
+  .time { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--cyan); font-weight: 700; font-size: 13px; }
+  dl { margin: 0; display: grid; grid-template-columns: 92px 1fr; gap: 6px 12px; }
+  dt { color: var(--muted); font-weight: 700; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; padding-top: 2px; }
+  dd { margin: 0; min-width: 0; }
+  dd q { quotes: none; font-weight: 900; color: #fff; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; padding: 1px 8px; border-radius: 99px; margin-right: 6px; background: var(--line); color: var(--cyan); }
+  .tag.cut { color: var(--pink); }
+  .assume { margin-top: 32px; background: var(--panel); border-radius: 18px; padding: 18px 22px; }
+  .assume h2 { font-family: var(--display); font-size: 20px; margin: 0 0 8px; }
+  .assume ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+  .assume b { color: var(--gold); }
+  @media (max-width: 520px) { dl { grid-template-columns: 1fr; } dt { padding-top: 6px; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>How do rich people make money <em>while they sleep?</em></h1>
+    <div class="meta">Flat-Vector Science · storyboard · 8 beats · 28 s</div>
+  </header>
+  <div class="grid" id="grid"></div>
+  <section class="assume">
+    <h2>Facts and numbers I assumed</h2>
+    <ul>
+      <li><b>8-hour work day</b>, paid once per hour (8 coins), to stand for "work for hours to earn money".</li>
+      <li><b>Rent: $1,500 a month</b> from the property; <b>dividends: $300 a quarter</b> (paid in March and June). Six months of both adds up to <b>$9,600</b> in the piggy bank.</li>
+      <li>Compounding example: <b>$10,000 at 7% a year for 30 years</b>. Reinvested, it grows to 10,000 × 1.07³⁰ = <b>$76,123</b>. If the earnings are spent instead, the invested balance stays at <b>$10,000</b> (flat line). The 7% is an illustrative long-run figure, not a promise; the caption says so on screen.</li>
+      <li>The risk beat shows a widening shaded range of possible outcomes and a bumpy line after the asteroid hits, to say returns vary and can fall. No specific loss figure is claimed.</li>
+      <li>Dividends are paid quarterly by most US companies that pay them; rent is shown as monthly gross income (no costs or taxes).</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+/*HARNESS*/
+</script>
+<script>
+/*STYLE*/
+</script>
+<script>
+const BEATS = [
+  { name: 'Hook', t0: 0, t1: 2.35, key: 1.5,
+    text: '"How do rich people make money while they sleep?" (66 px, word by word). Shrinks into the corner header "Money while you sleep" (28 px).',
+    flow: ['cont', 'Opens on a pull-back through the stars as the crescent moon rises with the character asleep in it (nightcap, Zzz). The title pops word by word, then glides and shrinks into the header pill, which stays for the whole piece.'],
+    sound: 'Airy pull-back breath, marimba plucks on the title words, soft snores, a low glide as the title flies to the corner. Wonder-pad starts underneath.' },
+  { name: 'Most people work for money', t0: 2.35, t1: 5.55, key: 5.25,
+    text: '"Most people work for money" (54 px) · hours counter "1 → 8 hours" (76 px) · "Paid by the hour" (30 px).',
+    flow: ['cont', 'Same shot: an alarm clock pops in and rings, the character jolts awake, the nightcap flies off, the sky warms to dawn and a sun rises. The character hops off the sinking moon, a hard hat drops on. The alarm clock glides over and becomes the work clock; its hands spin through 8 hours while a dotted arrow draws to the pay, and one coin pops in per hour.'],
+    sound: 'Pop + rapid bell ring, startled boop, swish for the cap, warm chord as the sun rises, hard-hat tock, one clock tock and a coin clink per hour (8), a pluck when "8 hours" lands.' },
+  { name: 'Make money work for you', t0: 5.55, t1: 9.3, key: 9.1,
+    text: '"Work for money" (50 px, struck through in red) → "Make money work for you" (62 px) · "your money" pill (28 px).',
+    flow: ['cut', 'Scene change: a giant foreground planet sweeps past the camera as the wipe (the reference\'s own move). The story flips from "most people" to "the rich", so a full change marks the contrast. A big gold coin with a face spins in, gets its own hard hat and flexes; three little coins pop out of it.'],
+    sound: 'Big planet whoosh with a low rumble. Shimmer + boop as the coin spins in, a swish and a soft two-note "nope" on the strike-through, a warm chord on "Make money work for you", tock for the hat, three rising boops with clinks for the baby coins.' },
+  { name: 'Invest in assets', t0: 9.3, t1: 13.2, key: 12.6,
+    text: '"Invest in assets" (58 px) · planet labels "Real estate", "Stocks", "Businesses" (30 px) · "Income while they sleep" (30 px).',
+    flow: ['cont', 'The big coin shrinks away while its three baby coins fly out along dotted arrows and bloom into three asset planets: a house planet, a rising-bar-chart planet, a ringed shop planet. The crescent moon rises again with the character asleep, and dotted streams draw from each planet down to the sleeper with coins riding them.'],
+    sound: 'Air swell on the split, boop + pluck as each planet blooms, a soft rise for the moon, snores, a stream of coin clinks as coins arrive (throttled), pluck on the label.' },
+  { name: 'Rent and dividends', t0: 13.2, t1: 16.9, key: 16.75,
+    text: 'Calendar "JAN → JUN" (46 px) · labels "Rent: monthly", "Dividends: quarterly" (30 px) · counter "$0 → $9,600" (64 px) + "while asleep" (28 px).',
+    flow: ['cont', 'Camera re-frames the same scene: the shop planet drifts off, the house and chart planets slide to the sides and grow, their labels turn into "Rent: monthly" and "Dividends: quarterly". The sleeper moves to the centre, a calendar and a piggy bank pop in. The calendar flips month by month; a rent coin flies to the piggy every month, a dividend coin every third month, and the counter climbs.'],
+    sound: 'Pop for the calendar, low boop for the piggy, a paper flip for each month, a coin clink + counter tock on each arrival (higher clink for dividends), a two-note pluck when $9,600 lands.' },
+  { name: 'Compound growth', t0: 16.9, t1: 21.8, key: 21.3,
+    text: '"But here\'s where it gets interesting" (50 px) → "Reinvest the earnings" (58 px) · axes $0/$40k/$80k, 0-30 years (28 px) · counter "Year N" → "$76,123" (96 px) · "$10,000 at 7% a year" (28 px) · "Spend it", "Reinvest", "compound returns" (30 px).',
+    flow: ['cut', 'Scene change: the camera dives into the piggy bank in a warm glow whiteout and emerges on a chart, because we move from "income" to "what you do with it". Two lines draw on together: spending the earnings stays flat at $10,000; reinvesting curves up. A coin rides the curve\'s head inside a spinning dotted reinvest loop, and the big number counts up to $76,123 with a flare.'],
+    sound: 'Rising dive whoosh into a chord bloom. Pluck + shimmer on the headline, tocks as the axes draw, counter tocks speeding up with the curve (max 11/s), soft loop clinks, a swell, then the biggest hit: low impact + big chord + shimmer on $76,123.' },
+  { name: 'Risk', t0: 21.8, t1: 24.6, key: 24.0,
+    text: '"Investments come with risk" (56 px) · "Profits never guaranteed" (30 px, red) · warning badge on the number.',
+    flow: ['cont', 'Same chart: a flaming asteroid streaks in and hits the curve. Red flash and a screen shake; the line turns bumpy, a widening pink band shows the range of possible outcomes, the $76,123 greys out with a red "!" badge, and "compound returns" swaps to "Profits never guaranteed".'],
+    sound: 'Descending asteroid rush, impact + low "nope" two-note, tock for the badge, airy swell for the band, a thud + low pluck for "never guaranteed".' },
+  { name: 'Takeaway', t0: 24.6, t1: 28, key: 27.6,
+    text: '"Build assets / that keep earning" (68 px, two lines), held for about 2 s.',
+    flow: ['cont', 'The camera tilts up off the chart (it slides away) to a big horizon planet. The character pops up waving in a hard hat with the three asset planets orbiting and popping coins. Then the hard hat flies off, the nightcap goes on and they fall asleep while the assets keep earning.'],
+    sound: 'Soft tilt whoosh, boops as the character and planets pop in, pluck on line 1, resolving chord + shimmer on line 2, quiet coin clinks, a swish and a final snore.' },
+];
+const fmt = (s) => s.toFixed(2).replace(/\.?0+$/, '') + ' s';
+(async () => {
+  for (const f of ['900 64px "Nunito"', '700 28px "Nunito"', '600 32px "Fredoka"']) { try { await document.fonts.load(f, 'AaZz09$'); } catch (e) {} }
+  const grid = document.getElementById('grid');
+  BEATS.forEach((b, i) => {
+    const el = document.createElement('article'); el.className = 'beat';
+    const cv = document.createElement('canvas'); cv.width = 1280; cv.height = 720; el.appendChild(cv);
+    const n = document.createElement('div'); n.className = 'notes';
+    n.innerHTML = `<div class="head"><span class="num">${i + 1}</span><span class="name"></span><span class="time">${fmt(b.t0)} – ${fmt(b.t1)} · key frame ${fmt(b.key)}</span></div>
+      <dl><dt>On screen</dt><dd class="tx"></dd><dt>${i ? 'From ' + i : 'Opening'}</dt><dd><span class="tag ${b.flow[0] === 'cut' ? 'cut' : ''}">${b.flow[0] === 'cut' ? 'Scene change' : 'Continuous'}</span><span class="fl"></span></dd><dt>Sound</dt><dd class="sd"></dd></dl>`;
+    n.querySelector('.name').textContent = b.name; n.querySelector('.tx').textContent = b.text; n.querySelector('.fl').textContent = b.flow[1]; n.querySelector('.sd').textContent = b.sound;
+    el.appendChild(n); grid.appendChild(el);
+    const x = cv.getContext('2d'); FV.explainer(x, 1280, 720, b.key);
+  });
+})();
+</script>

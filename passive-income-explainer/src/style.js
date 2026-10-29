@@ -1,0 +1,1037 @@
+// Flat-Vector Science explainer: "How do rich people make money while they sleep?"
+// Every frame is a pure function of t. Helpers marked "ref" are copied from the Flat-Vector Science reference.
+(function () {
+  const TAU = Math.PI * 2;
+  const cl = H.clamp, lerp = H.lerp;
+  const seg = (t, a, b) => cl((t - a) / (b - a));
+  const eo = H.ease.out, eio = H.ease.inOut;
+  // gentle overshoot
+  const back = (u, s = 1.5) => { if (u <= 0) return 0; if (u >= 1) return 1; return 1 + (s + 1) * Math.pow(u - 1, 3) + s * Math.pow(u - 1, 2); };
+  const FONT = '"Nunito", "Fredoka", sans-serif';
+  const F = (w, px) => `${w} ${px}px ${FONT}`;
+
+  const C = {
+    sky0: '#090b2c', sky1: '#18134f', sky2: '#3a1a6c',
+    ink: '#141846',
+    teal: ['#a4fbef', '#3ccbdc', '#1d64b0'],
+    yellow: '#ffd23f', pink: '#ff5d8f', red: '#ff3b5c', green: '#38e08e', cyan: '#56e8ff', violet: '#8b5cff', lav: '#bfb2ff',
+  };
+  const GOLD = ['#fff3b0', '#ffc93f', '#b5620e'];
+  const SKIN = ['#ffe6cc', '#f6ae80', '#a85a3c'];
+  const PINK = ['#ffd0e0', '#ff86b0', '#b23a6e'];
+  const REDB = ['#ff9aa8', '#ff4d6a', '#9c1638'];
+  const MOONP = ['#fff6c8', '#ffd86a', '#c9862a'];
+  const NZ = H.makeNoise(11);
+
+  // ================= TIMELINE (shared with scoreSound) =================
+  const D = 28;
+  const TL = {
+    title: 0.15, shrink: [1.75, 2.35],
+    alarm: 2.45, ring: [2.55, 3.15], wake: 2.62, capOff: [2.9, 3.1], moonOut: [2.85, 3.65], hop: [2.9, 3.6],
+    head2: 3.3, hat: 3.4, clockMove: [3.2, 3.7], arrow2: [3.7, 4.1], hours: [3.75, 5.05], payLbl: 4.45,
+    sweep: [5.55, 6.35],
+    coinIn: [6.15, 6.85], line1: 6.4, strike: [6.95, 7.3], line2: 7.4, yourLbl: 7.8, coinHat: 8.05, babies: 8.4,
+    split: [9.3, 9.85], bloom: 9.8, head4: 9.55, moonIn: [10.9, 11.5], streams: 11.35, incomeLbl: 11.95,
+    rearr: [13.2, 13.9], cal: 13.75, pig: 13.9, month0: 14.05, step: 0.42, travel: 0.5, toC: [16.9, 17.5],
+    head6a: 17.6, axes: [17.75, 18.2], head6b: 18.95, curves: [19.0, 20.9], hit: 20.9, compLbl: 21.1,
+    head7: 21.85, ast: [21.95, 22.6], cone: [22.75, 23.3], noGuar: 23.35,
+    take: [24.6, 25.4], bean8: 25.15, line1T: 25.35, line2T: 25.65, sleep8: 26.5, D,
+  };
+  const HOUR = (i) => TL.hours[0] + ((i + 1) * (TL.hours[1] - TL.hours[0])) / 8; // coin i pops when hour i+1 ends
+  const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN'];
+  const MT = (k) => TL.month0 + k * TL.step;
+  const RENT = 1500, DIV = 300; // assumed: $1,500 rent a month, $300 dividend a quarter
+  const DIVM = [2, 5]; // March and June
+  const V = (yr) => 10000 * Math.pow(1.07, yr); // assumed: $10,000 at 7% a year, reinvested
+  // stream coin spawns in the asset scene: [stream, spawnTime]
+  const STREAM_SP = (() => { const a = []; for (let s = 0; s < 3; s++) for (let ts = 11.75 + s * 0.15; ts < 13.0; ts += 0.45) a.push([s, ts]); return a; })();
+  const STREAM_TRAVEL = 0.7;
+
+  // ================= ref helpers =================
+  function rr(x, X, Y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r);
+    x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath();
+  }
+  function glow(x, cx, cy, r, col, a) {
+    if (a <= 0 || r <= 0) return;
+    const g = x.createRadialGradient(cx, cy, 0, cx, cy, r);
+    g.addColorStop(0, H.rgba(col, a)); g.addColorStop(0.35, H.rgba(col, a * 0.4)); g.addColorStop(1, H.rgba(col, 0));
+    x.fillStyle = g; x.beginPath(); x.arc(cx, cy, r, 0, TAU); x.fill();
+  }
+  function spark(x, cx, cy, r, col, a) {
+    if (a <= 0 || r <= 0) return;
+    x.save(); x.globalAlpha *= a; x.fillStyle = col; x.beginPath();
+    x.moveTo(cx, cy - r); x.quadraticCurveTo(cx, cy, cx + r, cy); x.quadraticCurveTo(cx, cy, cx, cy + r);
+    x.quadraticCurveTo(cx, cy, cx - r, cy); x.quadraticCurveTo(cx, cy, cx, cy - r); x.fill(); x.restore();
+  }
+  function crescent(x, cx, cy, r, dx, dy, fill) {
+    x.save(); x.beginPath(); x.arc(cx, cy, r, 0, TAU); x.clip();
+    x.beginPath(); x.rect(cx - r - 2, cy - r - 2, 2 * r + 4, 2 * r + 4); x.arc(cx + dx, cy + dy, r * 1.02, 0, TAU);
+    x.fillStyle = fill; x.fill('evenodd'); x.restore();
+  }
+  function ball(x, cx, cy, r, col, o = {}) {
+    if (r <= 0.3) return;
+    const la = o.la == null ? -2.25 : o.la, lx = Math.cos(la), ly = Math.sin(la);
+    const g = x.createLinearGradient(cx + lx * r, cy + ly * r, cx - lx * r, cy - ly * r);
+    g.addColorStop(0, col[0]); g.addColorStop(0.45, col[1]); g.addColorStop(1, H.rgba(H.mix(col[1], col[2], 0.6)));
+    x.fillStyle = g; x.beginPath(); x.arc(cx, cy, r, 0, TAU); x.fill();
+    if (o.inner) { x.save(); x.beginPath(); x.arc(cx, cy, r, 0, TAU); x.clip(); o.inner(); x.restore(); }
+    const sh = o.sh == null ? 0.3 : o.sh;
+    crescent(x, cx, cy, r, lx * r * sh, ly * r * sh, H.rgba(col[2], o.sha == null ? 0.5 : o.sha));
+    crescent(x, cx, cy, r, lx * r * sh * 2.2, ly * r * sh * 2.2, H.rgba(col[2], (o.sha == null ? 0.5 : o.sha) * 0.45));
+    crescent(x, cx, cy, r, -lx * r * 0.075, -ly * r * 0.075, H.rgba(o.rim || '#ffffff', o.rima == null ? 0.42 : o.rima));
+  }
+  const bez = (P, u) => { const v = 1 - u; return [v * v * v * P[0][0] + 3 * v * v * u * P[1][0] + 3 * v * u * u * P[2][0] + u * u * u * P[3][0], v * v * v * P[0][1] + 3 * v * v * u * P[1][1] + 3 * v * u * u * P[2][1] + u * u * u * P[3][1]]; };
+  function arrow(x, P, prog, col, lw, o = {}) {
+    if (prog <= 0) return;
+    const n = 48, a = o.a == null ? 1 : o.a;
+    if (a <= 0.01) return;
+    x.save(); x.globalAlpha *= a; x.strokeStyle = col; x.fillStyle = col; x.lineWidth = lw; x.lineCap = 'round'; x.lineJoin = 'round';
+    if (o.dots) x.setLineDash([0.01, lw * 1.9]);
+    x.beginPath(); const p0 = bez(P, o.from || 0); x.moveTo(p0[0], p0[1]);
+    for (let i = 1; i <= n; i++) { const u = (o.from || 0) + ((prog - (o.from || 0)) * i) / n; const p = bez(P, u); x.lineTo(p[0], p[1]); }
+    x.stroke(); x.setLineDash([]);
+    if (o.head !== false && prog > 0.08) {
+      const e = bez(P, prog), e0 = bez(P, prog - 0.02), ang = Math.atan2(e[1] - e0[1], e[0] - e0[0]), hs = lw * 1.5 * cl(prog * 5);
+      x.translate(e[0], e[1]); x.rotate(ang); x.beginPath(); x.moveTo(hs * 1.1, 0); x.lineTo(-hs * 0.8, hs); x.lineTo(-hs * 0.8, -hs); x.closePath();
+      x.lineWidth = lw * 0.7; x.fill(); x.stroke();
+    }
+    x.restore();
+  }
+  function text(x, s, cx, cy, px, col, o = {}) {
+    x.save(); x.font = F(o.w || 900, px); x.textAlign = o.align || 'center'; x.textBaseline = 'middle';
+    x.globalAlpha *= o.a == null ? 1 : o.a;
+    x.fillStyle = o.shadow || 'rgba(10,8,46,0.55)'; x.fillText(s, cx + px * 0.03, cy + px * 0.07);
+    x.fillStyle = col; x.fillText(s, cx, cy); x.restore();
+  }
+  function pill(x, cx, cy, s, px, o = {}) {
+    const sc = o.s == null ? 1 : o.s, a = o.a == null ? 1 : o.a;
+    if (sc <= 0.01 || a <= 0.01) return;
+    x.save(); x.font = F(o.w || 900, px);
+    const tw = x.measureText(s).width, w = tw + px * 1.15, h = px * 1.6;
+    x.translate(cx, cy); x.scale(sc, sc); x.globalAlpha *= a;
+    x.fillStyle = 'rgba(10,8,46,0.4)'; rr(x, -w / 2, -h / 2 + px * 0.2, w, h, h / 2); x.fill();
+    x.fillStyle = o.bg || '#ffffff';
+    if (o.ptr) { x.beginPath(); x.moveTo(-px * 0.35, h / 2 - 2); x.lineTo(0, h / 2 + px * 0.45); x.lineTo(px * 0.35, h / 2 - 2); x.fill(); }
+    rr(x, -w / 2, -h / 2, w, h, h / 2); x.fill();
+    x.fillStyle = 'rgba(255,255,255,0.35)'; rr(x, -w / 2 + h * 0.25, -h / 2 + h * 0.12, w - h * 0.5, h * 0.16, h * 0.08); x.fill();
+    x.fillStyle = o.fg || C.ink; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(s, 0, px * 0.06);
+    x.restore();
+    return w;
+  }
+  // multi-colour word line, centred on (0,0): parts = [[word, colour], ...]
+  function words(x, parts, px) {
+    x.font = F(900, px);
+    const sp = x.measureText(' ').width, ws = parts.map(([w]) => x.measureText(w).width), tot = ws.reduce((a, b) => a + b, 0) + sp * (parts.length - 1);
+    let wx = -tot / 2;
+    parts.forEach(([w, c], i) => { text(x, w, wx + ws[i] / 2, 0, px, c); wx += ws[i] + sp; });
+  }
+  // a headline that pops in at tin and lifts out at tout
+  function headline(x, t, parts, y, px, tin, tout) {
+    const kin = back(seg(t, tin, tin + 0.4), 1.4), kout = tout == null ? 0 : eio(seg(t, tout, tout + 0.3));
+    if (kin <= 0.01 || kout >= 0.99) return;
+    x.save(); x.translate(640, y - kout * 50 + (1 - cl(kin)) * 30); const s = kin * (1 - kout * 0.25); x.scale(s, s); x.globalAlpha *= 1 - kout;
+    words(x, typeof parts === 'string' ? [[parts, '#ffffff']] : parts, px); x.restore();
+  }
+
+  // ---------- sky (ref, plus a dawn mix for the "wake up" beat) ----------
+  let STARS = null;
+  function stars() {
+    if (STARS) return STARS;
+    const r = H.rng(77), a = [], sp = [];
+    for (let i = 0; i < 620; i++) a.push({ x: r.range(0, 1680), y: r.range(0, 1120), d: r.pick([0.15, 0.3, 0.3, 0.55, 1]), s: r.range(0.6, 2.0), ph: r.range(0, TAU), sp: r.range(0.8, 2.6), c: r.pick(['#ffffff', '#cfe4ff', '#ffe9c7', '#dccbff']) });
+    for (let i = 0; i < 16; i++) sp.push({ x: r.range(0, 1680), y: r.range(0, 1120), d: r.range(0.3, 0.9), s: r.range(6, 13), ph: r.range(0, TAU) });
+    STARS = { a, sp }; return STARS;
+  }
+  function sky(x, W, H_, t, cam = {}) {
+    const px = cam.x || 0, py = cam.y || 0, lz = Math.log(cam.z || 1), dn = cam.dawn || 0;
+    const g = x.createLinearGradient(0, 0, W * 0.3, H_);
+    g.addColorStop(0, H.rgba(H.mix(C.sky0, '#2a2378', dn))); g.addColorStop(0.5, H.rgba(H.mix(C.sky1, '#6a3a9a', dn))); g.addColorStop(1, H.rgba(H.mix(C.sky2, '#ff8a6a', dn)));
+    x.fillStyle = g; x.fillRect(0, 0, W, H_);
+    glow(x, W * 0.86, H_ * 0.12, 700, '#7b34c6', 0.34);
+    glow(x, W * 0.05, H_ * 1.0, 620, '#2448b4', 0.4 * (1 - dn * 0.6));
+    glow(x, W * 0.45, H_ * 0.6, 520, '#4a2a9c', 0.16);
+    if (dn > 0) glow(x, W * 0.8, H_ * 1.05, 900, '#ffb36b', 0.55 * dn);
+    const S = stars(), sa = 1 - 0.7 * dn;
+    const place = (s) => {
+      const k = Math.exp(lz * s.d * 0.6);
+      let sx = (((s.x - px * s.d) % 1680) + 1680) % 1680 - 200, sy = (((s.y - py * s.d) % 1120) + 1120) % 1120 - 200;
+      return [(sx - 640) * k + 640, (sy - 360) * k + 360];
+    };
+    for (const s of S.a) {
+      const [sx, sy] = place(s);
+      if (sx < -4 || sx > W + 4 || sy < -4 || sy > H_ + 4) continue;
+      x.globalAlpha = (0.55 + 0.45 * Math.sin(t * s.sp + s.ph)) * (0.45 + s.d * 0.55) * sa;
+      x.fillStyle = s.c; x.beginPath(); x.arc(sx, sy, s.s * (0.7 + 0.35 * s.d), 0, TAU); x.fill();
+    }
+    x.globalAlpha = 1;
+    for (const s of S.sp) {
+      const [sx, sy] = place(s); const tw = 0.6 + 0.4 * Math.sin(t * 1.7 + s.ph);
+      glow(x, sx, sy, s.s * 2.2, '#bfa8ff', 0.25 * tw * sa);
+      spark(x, sx, sy, s.s * tw, '#ffffff', 0.9 * sa);
+    }
+  }
+
+  // ---------- planets (ref) ----------
+  function ring(x, cx, cy, R, half, a = 1) {
+    if (a <= 0) return;
+    x.save(); x.translate(cx, cy); x.rotate(R.tilt); x.globalAlpha *= a;
+    const m = Math.max(...R.bands.map((b) => b[1])) * 1.05;
+    x.beginPath(); if (half === 'back') x.rect(-R.rx * m, -R.ry * m, R.rx * m * 2, R.ry * m); else x.rect(-R.rx * m, 0, R.rx * m * 2, R.ry * m); x.clip();
+    for (const [f0, f1, col, al] of R.bands) {
+      x.beginPath(); x.ellipse(0, 0, R.rx * f1, R.ry * f1, 0, 0, TAU); x.ellipse(0, 0, R.rx * f0, R.ry * f0, 0, 0, TAU);
+      x.fillStyle = H.rgba(col, (al == null ? 1 : al) * (half === 'back' ? 0.75 : 1)); x.fill('evenodd');
+    }
+    x.restore();
+  }
+  function bands(x, r, B, tilt) {
+    x.save(); x.rotate(tilt || 0);
+    for (const [v0, v1, col, a] of B) {
+      x.beginPath();
+      for (let i = 0; i <= 20; i++) { const u = (i / 20) * 2 - 1; x.lineTo(u * r * 1.1, (v0 + 0.13 * (1 - u * u)) * r); }
+      for (let i = 20; i >= 0; i--) { const u = (i / 20) * 2 - 1; x.lineTo(u * r * 1.1, (v1 + 0.13 * (1 - u * u)) * r); }
+      x.fillStyle = H.rgba(col, a == null ? 1 : a); x.fill();
+    }
+    x.restore();
+  }
+  const PL = {
+    magenta: { c: ['#ffa0c4', '#de4b93', '#4e1670'], glow: '#ff5fa8', tilt: -0.18, atmo: [255, 214, 234],
+      bands: [[-0.62, -0.48, '#ffc1d8', 0.55], [-0.2, -0.02, '#b5307e', 0.6], [0.06, 0.14, '#ffd0e2', 0.4], [0.36, 0.58, '#9a2775', 0.55]],
+      ring: { rx: 1.75, ry: 0.5, tilt: -0.2, bands: [[1.18, 1.32, '#ffd27a', 0.95], [1.34, 1.5, '#ff9f5a', 0.9], [1.53, 1.6, '#ffe7b0', 0.8]] } },
+    coral: { c: ['#ffd29a', '#ff7a4a', '#7a1f4f'], glow: '#ff8a50', tilt: 0.1, atmo: [255, 226, 190],
+      bands: [[-0.7, -0.5, '#ffe2b8', 0.5], [-0.32, -0.12, '#e8553a', 0.6], [0.05, 0.22, '#ffb27a', 0.5], [0.4, 0.62, '#c43c46', 0.55]] },
+    teal: { c: ['#9ff3ff', '#3a9be0', '#1d2f86'], glow: '#4fc9ff', tilt: -0.12, atmo: [190, 245, 255],
+      bands: [[-0.5, -0.36, '#c6f8ff', 0.5], [-0.05, 0.1, '#2f74c9', 0.55], [0.32, 0.5, '#7fdcff', 0.4]] },
+    moon: { c: ['#e8e6ff', '#a7a2d8', '#4a3f8c'], craters: true },
+  };
+  function planet(x, cx, cy, r, pal, o = {}) {
+    if (r <= 0.5) return;
+    const ra = o.ringA == null ? 1 : o.ringA;
+    if (pal.glow) glow(x, cx, cy, r * 1.7, pal.glow, o.glowA == null ? 0.32 : o.glowA);
+    const R = pal.ring && { rx: pal.ring.rx * r, ry: pal.ring.ry * r, tilt: pal.ring.tilt, bands: pal.ring.bands };
+    if (R) ring(x, cx, cy, R, 'back', ra);
+    ball(x, cx, cy, r, pal.c, {
+      sh: 0.34, sha: 0.55, rima: 0.35,
+      inner: () => {
+        x.save(); x.translate(cx, cy);
+        if (pal.bands) bands(x, r, pal.bands, pal.tilt);
+        if (pal.craters) { const q = H.rng(5); for (let i = 0; i < 5; i++) { const a = q.range(0, TAU), d = q.range(0.1, 0.65) * r, cr = q.range(0.1, 0.2) * r, qx = Math.cos(a) * d, qy = Math.sin(a) * d; x.fillStyle = 'rgba(80,66,150,0.38)'; x.beginPath(); x.arc(qx, qy, cr, 0, TAU); x.fill(); crescent(x, qx, qy, cr, -cr * 0.3, -cr * 0.3, 'rgba(255,255,255,0.3)'); } }
+        x.restore();
+      },
+    });
+    const atA = o.atmo == null ? 0.7 : o.atmo;
+    if (pal.atmo && atA > 0) {
+      x.save(); x.lineCap = 'round'; const ga0 = x.globalAlpha;
+      const la = -2.25, ag = x.createLinearGradient(cx + Math.cos(la) * r, cy + Math.sin(la) * r, cx - Math.cos(la) * r, cy - Math.sin(la) * r);
+      ag.addColorStop(0, H.rgba(pal.atmo, 1)); ag.addColorStop(0.55, H.rgba(pal.atmo, 0.5)); ag.addColorStop(1, H.rgba(pal.atmo, 0.08));
+      x.strokeStyle = ag;
+      for (const [lw, a] of [[r * 0.05, 0.08], [r * 0.028, 0.16], [r * 0.014, 0.3], [Math.max(2, r * 0.006), 0.6]]) { x.globalAlpha = ga0 * a * atA; x.lineWidth = lw; x.beginPath(); x.arc(cx, cy, r + lw * 0.15, 0, TAU); x.stroke(); }
+      x.restore();
+    }
+    if (R) ring(x, cx, cy, R, 'front', ra);
+  }
+
+  // ---------- print finish (ref): animated grain + static mottling, overlay ----------
+  let GRAIN = null;
+  function grainTex() {
+    if (GRAIN) return GRAIN;
+    const S = 256, tile = H.layer(S, S), tc = tile.getContext('2d'), img = tc.createImageData(S, S), d = img.data, r = H.rng(4242);
+    for (let i = 0; i < d.length; i += 4) { const v = 128 + (r() + r() + r() - 1.5) * 92; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+    tc.putImageData(img, 0, 0);
+    const MW = 320, MH = 180, mot = H.layer(MW, MH), mc = mot.getContext('2d'), mi = mc.createImageData(MW, MH), md = mi.data, nz = H.makeNoise(88);
+    for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const v = 128 + nz.fbm2(x * 0.035, y * 0.035, 4) * 70 + nz.n2(x * 0.22, y * 0.22) * 14, k = (y * MW + x) * 4; md[k] = md[k + 1] = md[k + 2] = v; md[k + 3] = 255; }
+    mc.putImageData(mi, 0, 0);
+    GRAIN = { tile, mot };
+    return GRAIN;
+  }
+  function finish(x, W, H_, t) {
+    const G = grainTex(), f = Math.floor(t * 24);
+    x.save(); x.globalCompositeOperation = 'overlay';
+    x.globalAlpha = 0.12; x.imageSmoothingEnabled = true; x.drawImage(G.mot, 0, 0, W, H_);
+    const pat = x.createPattern(G.tile, 'repeat'); pat.setTransform(new DOMMatrix().translateSelf((f * 73) % 256, (f * 151) % 256));
+    x.globalAlpha = 0.09; x.fillStyle = pat; x.fillRect(0, 0, W, H_);
+    x.restore();
+  }
+
+  // ---------- eyes (ref) ----------
+  function eye(x, ex, ey, er, o) {
+    const look = o.look || [0, 0];
+    if ((o.happy || 0) > 0.5) {
+      x.save(); x.strokeStyle = '#ffffff'; x.lineWidth = er * 0.42; x.lineCap = 'round';
+      if (o.happyCol) x.strokeStyle = o.happyCol;
+      x.beginPath(); x.arc(ex, ey + er * 0.35, er * 0.62, Math.PI * 1.15, Math.PI * 1.85); x.stroke(); x.restore(); return;
+    }
+    const bl = 1 - 0.92 * (o.blink || 0);
+    x.save(); x.translate(ex, ey); x.scale(1, bl);
+    x.fillStyle = '#ffffff'; x.beginPath(); x.arc(0, 0, er, 0, TAU); x.fill();
+    const pr = er * (o.worry ? 0.5 : 0.56);
+    const px = look[0] * er * 0.36, py = look[1] * er * 0.36;
+    x.fillStyle = '#141638'; x.beginPath(); x.arc(px, py, pr, 0, TAU); x.fill();
+    x.fillStyle = '#ffffff'; x.beginPath(); x.arc(px - pr * 0.35, py - pr * 0.4, pr * 0.32, 0, TAU); x.fill();
+    x.beginPath(); x.arc(px + pr * 0.35, py + pr * 0.35, pr * 0.13, 0, TAU); x.fill();
+    x.restore();
+  }
+  const blinkAt = (t, ph) => { const u = (t + ph) % 3.3; return u < 0.14 ? Math.sin((u / 0.14) * Math.PI) : 0; };
+
+  function badge(x, cx, cy, r, kind, s) {
+    if (s <= 0.01) return;
+    x.save(); x.translate(cx, cy); x.scale(s, s);
+    const ok = kind === 'ok';
+    glow(x, 0, 0, r * 2.4, ok ? C.green : C.red, 0.45);
+    ball(x, 0, 0, r, ok ? ['#9fffc8', C.green, '#178a5a'] : ['#ff9aa8', C.red, '#9c1638'], { sha: 0.4 });
+    x.strokeStyle = '#ffffff'; x.fillStyle = '#ffffff'; x.lineWidth = r * 0.26; x.lineCap = 'round'; x.lineJoin = 'round'; x.beginPath();
+    if (ok) { x.moveTo(-r * 0.42, 0); x.lineTo(-r * 0.1, r * 0.32); x.lineTo(r * 0.45, -r * 0.3); x.stroke(); }
+    else if (kind === 'warn') { x.moveTo(0, -r * 0.48); x.lineTo(0, r * 0.12); x.stroke(); x.beginPath(); x.arc(0, r * 0.45, r * 0.15, 0, TAU); x.fill(); }
+    else { x.moveTo(-r * 0.34, -r * 0.34); x.lineTo(r * 0.34, r * 0.34); x.moveTo(r * 0.34, -r * 0.34); x.lineTo(-r * 0.34, r * 0.34); x.stroke(); }
+    x.restore();
+  }
+  function flare(x, cx, cy, k, t) {
+    if (k <= 0) return;
+    glow(x, cx, cy, 420 * (0.6 + 0.4 * k), '#ffcf5a', 0.55 * k);
+    glow(x, cx, cy, 160, '#fff6d0', 0.6 * k);
+    x.save(); x.translate(cx, cy); x.rotate(t * 0.25); x.globalAlpha *= 0.32 * k; x.fillStyle = '#ffe28a';
+    for (let i = 0; i < 12; i++) { x.rotate(TAU / 12); x.beginPath(); x.moveTo(0, -12); x.lineTo(330 + 60 * (i % 2), 0); x.lineTo(0, 12); x.fill(); }
+    x.restore();
+  }
+  function burst(x, cx, cy, age, seed, spread, cols) {
+    if (age < 0 || age > 1.4) return;
+    const r = H.rng(seed);
+    for (let i = 0; i < 18; i++) {
+      const a = r.range(0, TAU), d = (spread || 300) * r.range(0.45, 1) * eo(cl(age / 0.9)), sz = r.range(7, 16) * (1 - cl(age / 1.4));
+      spark(x, cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.8, sz, r.pick(cols || ['#ffffff', '#ffe28a', '#9ff7ff', '#ffb0d0']), 1);
+    }
+  }
+
+  // ================= NEW PROPS (built from the same ball / crescent / glow recipe) =================
+  // hats sit on a round character; drawn in its local space (origin = body centre)
+  function hat(x, r, kind, k, o = {}) {
+    if (k <= 0.01) return;
+    x.save(); x.translate(o.dx || 0, -r * 0.62 + (o.dy || 0)); x.rotate(o.rot || 0); x.scale(k, k);
+    if (kind === 'hard') {
+      const g = x.createLinearGradient(-r * 0.6, -r * 0.7, r * 0.6, 0); g.addColorStop(0, '#fff09a'); g.addColorStop(0.5, '#ffd23f'); g.addColorStop(1, '#e8961c');
+      x.fillStyle = g; x.beginPath(); x.arc(0, 0, r * 0.68, Math.PI, 0); x.closePath(); x.fill();
+      x.save(); x.beginPath(); x.rect(-r, -r, 2 * r, r); x.clip(); crescent(x, 0, 0, r * 0.68, -r * 0.2, -r * 0.22, 'rgba(196,104,18,0.38)'); x.restore();
+      x.fillStyle = '#ffe680'; rr(x, -r * 0.09, -r * 0.7, r * 0.18, r * 0.68, r * 0.09); x.fill();
+      x.fillStyle = '#f0a81f'; rr(x, -r * 0.9, -r * 0.05, r * 1.8, r * 0.17, r * 0.085); x.fill();
+      x.fillStyle = 'rgba(255,255,255,0.4)'; rr(x, -r * 0.7, -r * 0.03, r * 0.8, r * 0.05, r * 0.025); x.fill();
+    } else {
+      const g = x.createLinearGradient(-r * 0.6, -r, r, 0); g.addColorStop(0, '#9fb0ff'); g.addColorStop(0.5, '#5a63e6'); g.addColorStop(1, '#33289a');
+      x.fillStyle = g; x.beginPath(); x.moveTo(-r * 0.72, 0);
+      x.quadraticCurveTo(-r * 0.5, -r * 1.15, r * 0.3, -r * 1.0); x.quadraticCurveTo(r * 0.85, -r * 0.88, r * 1.05, -r * 0.32);
+      x.quadraticCurveTo(r * 0.6, -r * 0.62, r * 0.72, 0); x.closePath(); x.fill();
+      x.fillStyle = 'rgba(255,230,128,0.85)'; for (const [dx, dy] of [[-0.3, -0.45], [0.2, -0.7], [0.3, -0.28]]) { x.beginPath(); x.arc(dx * r, dy * r, r * 0.07, 0, TAU); x.fill(); }
+      x.fillStyle = '#ffffff'; rr(x, -r * 0.8, -r * 0.1, r * 1.6, r * 0.22, r * 0.11); x.fill();
+      ball(x, r * 1.05, -r * 0.3, r * 0.18, ['#ffffff', '#e8e4ff', '#9a8fe0'], { sha: 0.35 });
+    }
+    x.restore();
+  }
+  function zzz(x, cx, cy, t, a, sz, rise = 120) {
+    if (a <= 0.01) return;
+    for (let i = 0; i < 3; i++) {
+      const u = (t * 0.45 + i / 3) % 1, px = sz * (0.75 + 0.55 * u);
+      text(x, 'Z', cx + u * 80 + Math.sin(u * 6) * 8, cy - u * rise, px, '#d6e6ff', { a: a * Math.sin(u * Math.PI) });
+    }
+  }
+  // the round character: one skin-tone ball with a shirt, big eyes, stubby arms and feet
+  function bean(x, cx, cy, r, o = {}) {
+    if (r < 1) return;
+    const t = o.t || 0;
+    x.save(); x.translate(cx, cy); x.rotate(o.rot || 0); const sq = o.sq || 0; x.scale(1 + sq, 1 - sq);
+    if (!o.noFeet) { x.fillStyle = '#2b2f7a'; for (const sd of [-1, 1]) { x.beginPath(); x.ellipse(sd * r * 0.38, r * 0.95, r * 0.26, r * 0.14, 0, 0, TAU); x.fill(); } }
+    for (const sd of [-1, 1]) {
+      const up = (o.armUp || 0) * (sd > 0 ? 1 : 0.7), ang = sd * (0.6 + 0.12 * Math.sin(t * 2.2 + sd)) - sd * up * 1.8;
+      const sx = sd * r * 0.82, sy = r * 0.18, ex = sx + Math.sin(ang) * r * 0.5, ey = sy + Math.cos(ang) * r * 0.5;
+      x.strokeStyle = '#2f8fe0'; x.lineWidth = r * 0.2; x.lineCap = 'round'; x.beginPath(); x.moveTo(sx, sy); x.lineTo(ex, ey); x.stroke();
+      ball(x, ex, ey, r * 0.15, SKIN, { sha: 0.4 });
+    }
+    ball(x, 0, 0, r, SKIN, { sha: 0.42, inner: () => {
+      const g = x.createLinearGradient(0, r * 0.3, 0, r); g.addColorStop(0, '#45b4ff'); g.addColorStop(1, '#1d4fae');
+      x.fillStyle = g; x.beginPath(); x.moveTo(-r * 1.1, r * 0.4); x.quadraticCurveTo(0, r * 0.62, r * 1.1, r * 0.4); x.lineTo(r * 1.1, r * 1.1); x.lineTo(-r * 1.1, r * 1.1); x.fill();
+    } });
+    const ey = -r * 0.1, er = r * 0.22;
+    for (const sd of [-1, 1]) {
+      const ex = sd * r * 0.33;
+      if (o.sleep) { x.strokeStyle = '#5a2a3a'; x.lineWidth = er * 0.32; x.lineCap = 'round'; x.beginPath(); x.arc(ex, ey - er * 0.2, er * 0.68, 0.15 * Math.PI, 0.85 * Math.PI); x.stroke(); }
+      else {
+        eye(x, ex, ey, er * (o.shock ? 1.15 : 1), { look: o.look, blink: o.blink, happy: o.happy, happyCol: '#5a2a3a' });
+        if (o.tired && !o.happy) { x.fillStyle = '#f2a274'; x.beginPath(); x.arc(ex, ey, er * 1.06, Math.PI, TAU); x.closePath(); x.fill(); x.strokeStyle = '#b8603c'; x.lineWidth = er * 0.18; x.lineCap = 'round'; x.beginPath(); x.moveTo(ex - er, ey); x.lineTo(ex + er, ey); x.stroke(); }
+      }
+    }
+    x.fillStyle = 'rgba(255,110,140,0.45)'; for (const sd of [-1, 1]) { x.beginPath(); x.arc(sd * r * 0.58, r * 0.16, r * 0.12, 0, TAU); x.fill(); }
+    x.save(); x.strokeStyle = '#7a2e2e'; x.fillStyle = '#7a2e2e'; x.lineWidth = r * 0.06; x.lineCap = 'round'; x.beginPath();
+    const my = r * 0.28;
+    if (o.shock) { x.ellipse(0, my, r * 0.09, r * 0.12, 0, 0, TAU); x.fill(); }
+    else if (o.sleep) { x.ellipse(0, my, r * 0.06, r * 0.05, 0, 0, TAU); x.fill(); }
+    else if (o.tired) { x.moveTo(-r * 0.12, my); x.quadraticCurveTo(-r * 0.06, my - r * 0.05, 0, my); x.quadraticCurveTo(r * 0.06, my + r * 0.05, r * 0.12, my); x.stroke(); }
+    else if (o.happy) { x.arc(0, my - r * 0.06, r * 0.14, 0.1 * Math.PI, 0.9 * Math.PI); x.stroke(); }
+    else { x.arc(0, my - r * 0.08, r * 0.1, 0.25 * Math.PI, 0.75 * Math.PI); x.stroke(); }
+    x.restore();
+    if (o.sweat > 0) {
+      const sx = r * 0.8, sy = -r * 0.42 + ((t * 40) % (r * 0.3));
+      x.save(); x.globalAlpha *= cl(o.sweat); x.fillStyle = '#7fe6ff';
+      x.beginPath(); x.moveTo(sx, sy - r * 0.16); x.quadraticCurveTo(sx + r * 0.09, sy, sx, sy + r * 0.06); x.quadraticCurveTo(sx - r * 0.09, sy, sx, sy - r * 0.16); x.fill(); x.restore();
+    }
+    if (o.cap) hat(x, r, 'night', o.cap, { rot: -0.05 });
+    if (o.hard) hat(x, r, 'hard', o.hard, { dy: -(1 - cl(o.hard)) * r * 0.6 });
+    x.restore();
+    if (o.zzz) zzz(x, cx + r * 0.75, cy - r * 0.95, t, o.zzz, Math.max(30, r * 0.5), o.zzzRise);
+  }
+  // gold coin: ball + rim ring + $ (or a face)
+  function coin(x, cx, cy, r, o = {}) {
+    if (r < 0.5) return;
+    const fl = o.flip == null ? 1 : o.flip, t = o.t || 0;
+    x.save(); x.translate(cx, cy); x.rotate(o.rot || 0);
+    if (o.glowA !== 0) glow(x, 0, 0, r * 1.9, '#ffcf5a', o.glowA == null ? 0.3 : o.glowA);
+    if (o.arms) for (const sd of [-1, 1]) {
+      const up = (o.armUp || 0), ang = sd * (0.7 + 0.12 * Math.sin(t * 2.4 + sd)) - sd * up * 2.0;
+      const sx = sd * r * 0.9, sy = r * 0.1, ex = sx + Math.sin(ang) * r * 0.42, ey = sy + Math.cos(ang) * r * 0.42;
+      x.strokeStyle = '#d98d1a'; x.lineWidth = r * 0.12; x.lineCap = 'round'; x.beginPath(); x.moveTo(sx, sy); x.lineTo(ex, ey); x.stroke();
+      ball(x, ex, ey, r * 0.12, GOLD, { sha: 0.4 });
+    }
+    x.save(); x.scale(Math.max(0.06, Math.abs(fl)), 1);
+    ball(x, 0, 0, r, GOLD, { sha: 0.42, inner: () => {
+      x.strokeStyle = 'rgba(190,105,16,0.5)'; x.lineWidth = r * 0.09; x.beginPath(); x.arc(0, 0, r * 0.76, 0, TAU); x.stroke();
+      if (!o.face || fl < 0) { x.font = F(900, r * 1.05); x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = 'rgba(176,96,12,0.78)'; x.fillText('$', 0, r * 0.06); }
+    } });
+    if (o.face && fl > 0) {
+      for (const sd of [-1, 1]) eye(x, sd * r * 0.3, -r * 0.08, r * 0.2, { look: o.look, blink: o.blink, happy: o.happy, happyCol: '#8a4a0a' });
+      x.fillStyle = 'rgba(255,110,90,0.4)'; for (const sd of [-1, 1]) { x.beginPath(); x.arc(sd * r * 0.52, r * 0.18, r * 0.1, 0, TAU); x.fill(); }
+      x.strokeStyle = '#8a4a0a'; x.lineWidth = r * 0.06; x.lineCap = 'round'; x.beginPath(); x.arc(0, r * 0.16, r * 0.14, 0.15 * Math.PI, 0.85 * Math.PI); x.stroke();
+    }
+    x.restore();
+    if (o.hard) hat(x, r, 'hard', o.hard, { dy: -(1 - cl(o.hard)) * r * 0.6 });
+    x.restore();
+  }
+  // crescent moon cradle; returns where a sleeper of radius sr sits
+  function moonSeat(cx, cy, r, sr) { return [cx + r * 0.22, cy - r * 0.55 + r * 0.86 - sr * 0.98]; }
+  function crescentMoon(x, cx, cy, r) {
+    if (r < 1) return;
+    glow(x, cx, cy, r * 2.0, '#ffd86a', 0.22);
+    x.save(); x.beginPath(); x.rect(cx - r * 3, cy - r * 3, r * 6, r * 6); x.arc(cx + r * 0.22, cy - r * 0.55, r * 0.86, 0, TAU); x.clip('evenodd');
+    ball(x, cx, cy, r, MOONP, { sha: 0.42, inner: () => {
+      const q = H.rng(9); for (let i = 0; i < 4; i++) { const a = q.range(1.6, 3.4), d = q.range(0.55, 0.8) * r, cr = q.range(0.08, 0.14) * r, qx = cx + Math.cos(a) * d, qy = cy + Math.sin(a) * d; x.fillStyle = 'rgba(201,134,42,0.35)'; x.beginPath(); x.arc(qx, qy, cr, 0, TAU); x.fill(); }
+    } });
+    x.restore();
+  }
+  function alarmClock(x, cx, cy, r, o = {}) {
+    if (r < 1) return;
+    const ring = o.ring || 0, t = o.t || 0, hm = Math.sin(t * 90) * ring;
+    x.save(); x.translate(cx, cy); x.rotate(Math.sin(t * 62) * 0.12 * ring);
+    if (ring > 0) glow(x, 0, 0, r * 2.4, '#ffd23f', 0.35 * ring);
+    x.strokeStyle = '#7a1f3f'; x.lineWidth = r * 0.12; x.lineCap = 'round';
+    for (const sd of [-1, 1]) { x.beginPath(); x.moveTo(sd * r * 0.5, r * 0.75); x.lineTo(sd * r * 0.72, r * 1.05); x.stroke(); }
+    x.strokeStyle = '#c77a12'; x.lineWidth = r * 0.08; x.beginPath(); x.moveTo(0, -r * 0.9); x.lineTo(0, -r * 1.2); x.stroke();
+    for (const sd of [-1, 1]) ball(x, sd * r * 0.62 + sd * hm * r * 0.03, -r * 0.84, r * 0.34, GOLD, { sha: 0.4 });
+    ball(x, hm * r * 0.28, -r * 1.22, r * 0.1, GOLD);
+    ball(x, 0, 0, r, REDB, { sha: 0.45 });
+    x.fillStyle = '#fffaf0'; x.beginPath(); x.arc(0, 0, r * 0.74, 0, TAU); x.fill();
+    x.fillStyle = C.ink;
+    for (let i = 0; i < 12; i++) { const a = (i / 12) * TAU; x.beginPath(); x.arc(Math.cos(a) * r * 0.6, Math.sin(a) * r * 0.6, r * (i % 3 ? 0.035 : 0.06), 0, TAU); x.fill(); }
+    const h = o.h == null ? 7 : o.h, ha = ((h % 12) / 12) * TAU - Math.PI / 2, ma = (h % 1) * TAU - Math.PI / 2;
+    x.strokeStyle = C.ink; x.lineCap = 'round';
+    x.lineWidth = r * 0.11; x.beginPath(); x.moveTo(0, 0); x.lineTo(Math.cos(ha) * r * 0.36, Math.sin(ha) * r * 0.36); x.stroke();
+    x.lineWidth = r * 0.07; x.beginPath(); x.moveTo(0, 0); x.lineTo(Math.cos(ma) * r * 0.54, Math.sin(ma) * r * 0.54); x.stroke();
+    x.fillStyle = C.red; x.beginPath(); x.arc(0, 0, r * 0.08, 0, TAU); x.fill();
+    x.restore();
+  }
+  function house(x, bx, by, w) {
+    const h = w * 0.6, x0 = bx - w / 2, y0 = by - h;
+    x.fillStyle = '#b8384a'; rr(x, bx + w * 0.2, y0 - h * 0.62, w * 0.13, h * 0.55, w * 0.02); x.fill();
+    const g = x.createLinearGradient(x0, y0, x0 + w, by); g.addColorStop(0, '#fff4e4'); g.addColorStop(1, '#f2c9a2');
+    x.fillStyle = g; rr(x, x0, y0, w, h, w * 0.04); x.fill();
+    x.fillStyle = 'rgba(176,96,72,0.22)'; rr(x, bx + w * 0.2, y0, w * 0.3, h, w * 0.04); x.fill();
+    const rg = x.createLinearGradient(x0, y0 - h * 0.7, x0 + w, y0); rg.addColorStop(0, '#ff9a72'); rg.addColorStop(1, '#cf3a4e');
+    x.fillStyle = rg; x.strokeStyle = rg; x.lineJoin = 'round'; x.lineWidth = w * 0.07;
+    x.beginPath(); x.moveTo(x0 - w * 0.08, y0 + w * 0.02); x.lineTo(bx, y0 - h * 0.72); x.lineTo(x0 + w * 1.08, y0 + w * 0.02); x.closePath(); x.fill(); x.stroke();
+    x.strokeStyle = 'rgba(255,220,200,0.6)'; x.lineWidth = w * 0.025; x.lineCap = 'round'; x.beginPath(); x.moveTo(x0 + w * 0.02, y0 - h * 0.02); x.lineTo(bx - w * 0.05, y0 - h * 0.6); x.stroke();
+    x.fillStyle = '#2f5fc0'; rr(x, bx - w * 0.09, by - h * 0.56, w * 0.18, h * 0.56, w * 0.06); x.fill();
+    x.fillStyle = C.yellow; x.beginPath(); x.arc(bx + w * 0.05, by - h * 0.26, w * 0.02, 0, TAU); x.fill();
+    for (const sd of [-1, 1]) {
+      const ws = w * 0.2, wx = bx + sd * w * 0.3 - ws / 2, wy = y0 + h * 0.2;
+      glow(x, wx + ws / 2, wy + ws / 2, ws * 1.4, '#ffd86a', 0.45);
+      x.fillStyle = '#ffe680'; rr(x, wx, wy, ws, ws, ws * 0.18); x.fill();
+      x.strokeStyle = 'rgba(190,120,40,0.7)'; x.lineWidth = w * 0.022; x.beginPath(); x.moveTo(wx + ws / 2, wy); x.lineTo(wx + ws / 2, wy + ws); x.moveTo(wx, wy + ws / 2); x.lineTo(wx + ws, wy + ws / 2); x.stroke();
+    }
+  }
+  function shop(x, bx, by, w) {
+    const h = w * 0.62, x0 = bx - w / 2, y0 = by - h;
+    const g = x.createLinearGradient(x0, y0, x0 + w, by); g.addColorStop(0, '#f2f6ff'); g.addColorStop(1, '#b7c3f2');
+    x.fillStyle = g; rr(x, x0, y0, w, h, w * 0.04); x.fill();
+    x.fillStyle = '#5a63e6'; rr(x, x0 - w * 0.04, y0 - h * 0.3, w * 1.08, h * 0.32, w * 0.05); x.fill();
+    ball(x, bx, y0 - h * 0.14, h * 0.11, GOLD, { sha: 0.4 });
+    const n = 6, aw = (w * 1.08) / n, ay = y0 + h * 0.02, ah = h * 0.16;
+    for (let i = 0; i < n; i++) {
+      x.fillStyle = i % 2 ? '#ffffff' : C.pink; const ax = x0 - w * 0.04 + i * aw;
+      x.fillRect(ax, ay, aw + 0.5, ah); x.beginPath(); x.arc(ax + aw / 2, ay + ah, aw / 2, 0, Math.PI); x.fill();
+    }
+    x.fillStyle = '#2a3a9c'; rr(x, x0 + w * 0.1, y0 + h * 0.44, w * 0.44, h * 0.4, w * 0.04); x.fill();
+    glow(x, x0 + w * 0.32, y0 + h * 0.64, w * 0.3, '#ffd86a', 0.4);
+    x.strokeStyle = 'rgba(255,255,255,0.45)'; x.lineWidth = w * 0.03; x.lineCap = 'round'; x.beginPath(); x.moveTo(x0 + w * 0.16, y0 + h * 0.74); x.lineTo(x0 + w * 0.3, y0 + h * 0.52); x.stroke();
+    x.fillStyle = '#ff8d3f'; rr(x, bx + w * 0.14, y0 + h * 0.4, w * 0.24, h * 0.6, w * 0.05); x.fill();
+  }
+  function bars(x, bx, by, w) {
+    const bw = w * 0.22, gap = w * 0.08, hs = [0.35, 0.62, 0.95], x0 = bx - (3 * bw + 2 * gap) / 2;
+    hs.forEach((hh, i) => {
+      const h = w * hh, X = x0 + i * (bw + gap);
+      const g = x.createLinearGradient(0, by - h, 0, by); g.addColorStop(0, '#b6ffd6'); g.addColorStop(0.5, C.green); g.addColorStop(1, '#178a5a');
+      x.fillStyle = 'rgba(10,8,46,0.35)'; rr(x, X + w * 0.025, by - h + w * 0.03, bw, h, bw * 0.3); x.fill();
+      x.fillStyle = g; rr(x, X, by - h, bw, h, bw * 0.3); x.fill();
+    });
+    const P = [[x0 - w * 0.06, by - w * 0.42], [x0 + bw * 1.2, by - w * 0.72], [x0 + bw * 2 + gap, by - w * 0.6], [x0 + 3 * bw + 2 * gap + w * 0.06, by - w * 1.08]];
+    x.save(); x.strokeStyle = '#ffffff'; x.fillStyle = '#ffffff'; x.lineWidth = w * 0.07; x.lineCap = 'round'; x.lineJoin = 'round';
+    x.beginPath(); P.forEach(([px, py], i) => (i ? x.lineTo(px, py) : x.moveTo(px, py))); x.stroke();
+    const [ex, ey] = P[3], ang = Math.atan2(ey - P[2][1], ex - P[2][0]), hs2 = w * 0.13;
+    x.translate(ex, ey); x.rotate(ang); x.beginPath(); x.moveTo(hs2 * 1.1, 0); x.lineTo(-hs2 * 0.7, hs2); x.lineTo(-hs2 * 0.7, -hs2); x.closePath(); x.fill();
+    x.restore();
+  }
+  const ASSET = { estate: { pal: PL.coral, prop: house, w: 1.0 }, stocks: { pal: PL.teal, prop: bars, w: 0.95 }, business: { pal: PL.magenta, prop: shop, w: 1.0 } };
+  function assetPlanet(x, cx, cy, r, kind, o = {}) {
+    if (r < 1) return;
+    const A = ASSET[kind];
+    x.save(); x.globalAlpha *= o.a == null ? 1 : o.a;
+    planet(x, cx, cy, r, A.pal, { glowA: o.glowA == null ? 0.3 : o.glowA });
+    A.prop(x, cx, cy - r * 0.84, r * A.w);
+    x.restore();
+  }
+  function piggy(x, cx, cy, r, o = {}) {
+    if (r < 1) return;
+    const sq = o.gulp || 0;
+    x.save(); x.translate(cx, cy); x.scale(1 + sq * 0.1, 1 - sq * 0.1);
+    glow(x, 0, 0, r * 2, '#ff86b0', 0.25);
+    x.fillStyle = '#c9447e'; for (const lx of [-0.55, -0.2, 0.25, 0.6]) { rr(x, lx * r - r * 0.12, r * 0.6, r * 0.24, r * 0.42, r * 0.1); x.fill(); }
+    x.strokeStyle = '#e0558f'; x.lineWidth = r * 0.08; x.lineCap = 'round'; x.beginPath(); x.moveTo(-r * 1.1, -r * 0.05);
+    x.bezierCurveTo(-r * 1.4, -r * 0.3, -r * 1.45, r * 0.1, -r * 1.25, -r * 0.05); x.stroke();
+    x.save(); x.scale(1.18, 1); ball(x, 0, 0, r, PINK, { sha: 0.42 }); x.restore();
+    x.fillStyle = '#ff6fa0'; x.beginPath(); x.moveTo(r * 0.2, -r * 0.78); x.lineTo(r * 0.45, -r * 1.15); x.lineTo(r * 0.62, -r * 0.66); x.closePath(); x.fill();
+    x.fillStyle = '#7a1f4f'; rr(x, -r * 0.35, -r * 0.93, r * 0.5, r * 0.13, r * 0.065); x.fill();
+    x.fillStyle = '#ffa6c6'; x.beginPath(); x.ellipse(r * 1.14, r * 0.06, r * 0.2, r * 0.26, 0, 0, TAU); x.fill();
+    x.fillStyle = '#b23a6e'; for (const dy of [-0.08, 0.18]) { x.beginPath(); x.ellipse(r * 1.17, r * dy, r * 0.05, r * 0.06, 0, 0, TAU); x.fill(); }
+    eye(x, r * 0.62, -r * 0.24, r * 0.16, { blink: o.blink, look: [0.4, 0], happy: o.happy, happyCol: '#7a1f4f' });
+    x.fillStyle = 'rgba(255,90,140,0.5)'; x.beginPath(); x.arc(r * 0.72, r * 0.18, r * 0.1, 0, TAU); x.fill();
+    x.restore();
+  }
+  function calendar(x, cx, cy, s, label, flip, a) {
+    if (s < 1 || a <= 0.01) return;
+    const w = s, h = s * 1.05;
+    x.save(); x.translate(cx, cy); x.globalAlpha *= a;
+    x.fillStyle = 'rgba(10,8,46,0.4)'; rr(x, -w / 2 + 4, -h / 2 + 8, w, h, w * 0.14); x.fill();
+    x.save(); rr(x, -w / 2, -h / 2, w, h, w * 0.14); x.clip();
+    x.fillStyle = '#ffffff'; x.fillRect(-w / 2, -h / 2, w, h);
+    x.fillStyle = C.red; x.fillRect(-w / 2, -h / 2, w, h * 0.3);
+    x.fillStyle = 'rgba(255,255,255,0.3)'; x.fillRect(-w / 2, -h / 2 + h * 0.05, w, h * 0.05);
+    x.restore();
+    x.fillStyle = '#5a1f3f'; for (const sd of [-1, 1]) { rr(x, sd * w * 0.24 - w * 0.05, -h / 2 - h * 0.08, w * 0.1, h * 0.2, w * 0.05); x.fill(); }
+    x.save(); x.translate(0, h * 0.15); x.scale(1, Math.max(0.05, flip)); text(x, label, 0, 0, s * 0.36, C.ink, { shadow: 'rgba(0,0,0,0)' }); x.restore();
+    x.restore();
+  }
+  function asteroid(x, cx, cy, r, dx, dy) {
+    for (let i = 6; i >= 1; i--) glow(x, cx - dx * i * r * 0.8, cy - dy * i * r * 0.8, r * (1.9 - i * 0.18), i < 3 ? '#ffb04a' : '#ff3b5c', 0.4);
+    glow(x, cx, cy, r * 2.4, '#ff6a3d', 0.5);
+    ball(x, cx, cy, r, ['#ead2c2', '#a07c74', '#46283c'], { sha: 0.5, inner: () => {
+      const q = H.rng(21); for (let i = 0; i < 4; i++) { const a = q.range(0, TAU), d = q.range(0.1, 0.6) * r, cr = q.range(0.14, 0.24) * r; x.fillStyle = 'rgba(70,40,60,0.4)'; x.beginPath(); x.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, cr, 0, TAU); x.fill(); }
+    } });
+  }
+  // dotted circular "reinvest" loop with an arrowhead
+  function loopArrow(x, cx, cy, R, a0, a1, col, lw, alpha) {
+    if (alpha <= 0.01) return;
+    x.save(); x.globalAlpha *= alpha; x.strokeStyle = col; x.fillStyle = col; x.lineWidth = lw; x.lineCap = 'round';
+    x.setLineDash([0.01, lw * 1.9]); x.beginPath(); x.arc(cx, cy, R, a0, a1); x.stroke(); x.setLineDash([]);
+    const hx = cx + Math.cos(a1) * R, hy = cy + Math.sin(a1) * R;
+    x.translate(hx, hy); x.rotate(a1 + Math.PI / 2); const hs = lw * 1.5; x.beginPath(); x.moveTo(hs * 1.1, 0); x.lineTo(-hs * 0.8, hs); x.lineTo(-hs * 0.8, -hs); x.closePath(); x.fill();
+    x.restore();
+  }
+
+  function header(x, a) { pill(x, 206, 44, 'Money while you sleep', 28, { a, bg: 'rgba(255,255,255,0.95)' }); }
+
+  // ================= SCENE A: hook (sleeper on the moon) -> most people work for money =================
+  function exA(x, W, H_, t) {
+    const dawn = eio(seg(t, 2.8, 3.8));
+    const pull = 1 + 1.6 * (1 - eo(seg(t, 0, 1.3)));
+    sky(x, W, H_, t, { z: pull, x: t * 12, dawn });
+    planet(x, 1150 - t * 4, 120, 30, PL.moon);
+    planet(x, 110 + t * 3, 610, 34 * back(seg(t, 0.4, 0.9)), PL.coral, { glowA: 0.25 });
+    // the sun comes up for the work day
+    if (dawn > 0) { const sy = lerp(900, 700, dawn); glow(x, 1200, sy, 300, '#ffb36b', 0.5 * dawn); ball(x, 1200, sy, 120, ['#fff6c8', '#ffc93f', '#ff7a3d'], { sha: 0.3 }); }
+
+    const mo = eio(seg(t, TL.moonOut[0], TL.moonOut[1]));
+    const MR = 150, mcx = 640, mcy = 500 + 170 * (1 - eo(seg(t, 0, 1.1))) + 520 * mo;
+    crescentMoon(x, mcx, mcy, MR);
+
+    // the character: asleep in the moon, then hops off and gets to work
+    const sr0 = MR * 0.4, seat = moonSeat(mcx, mcy, MR, sr0);
+    const mv = eio(seg(t, TL.hop[0], TL.hop[1]));
+    const pr = lerp(sr0, 95, mv), pcx = lerp(seat[0], 330, mv), pcy = lerp(seat[1], 470, mv) - 120 * Math.sin(mv * Math.PI) + Math.sin(t * 1.8) * 6 * mv;
+    const asleep = t < TL.wake, shock = t >= TL.wake && t < 3.45, working = t >= 3.45;
+    const jolt = t > TL.wake ? Math.max(0, 1 - (t - TL.wake) / 0.3) : 0;
+    bean(x, pcx, pcy - jolt * 30, pr, {
+      t, sleep: asleep, shock, tired: working, rot: asleep ? -0.12 : 0, sq: asleep ? 0.03 * Math.sin(t * 2.4) : -0.08 * jolt,
+      noFeet: t < 2.9, look: shock ? [0.8, -0.3] : [0.6, 0.1], blink: blinkAt(t, 0.7),
+      cap: 1 - seg(t, TL.capOff[0], TL.capOff[1]), hard: back(seg(t, TL.hat, TL.hat + 0.35), 2), sweat: seg(t, 4.3, 4.6),
+      zzz: asleep ? seg(t, 0.5, 0.9) : 0,
+    });
+
+    // alarm clock rings, then becomes the work clock
+    const cin = back(seg(t, TL.alarm, TL.alarm + 0.3), 1.8), cm = eio(seg(t, TL.clockMove[0], TL.clockMove[1]));
+    const ringK = seg(t, TL.ring[0], TL.ring[0] + 0.05) * (1 - seg(t, TL.ring[1] - 0.05, TL.ring[1]));
+    const hp = seg(t, TL.hours[0], TL.hours[1]);
+    const ccx = lerp(890, 600, cm), ccy = lerp(360, 320, cm) + Math.sin(t * 2) * 4, cr = lerp(62, 72, cm) * cin;
+    alarmClock(x, ccx, ccy, cr, { t, ring: ringK, h: 7 + 2 * cm + 8 * hp });
+    if (ringK > 0) for (let i = 0; i < 3; i++) { const a = -0.9 + i * 0.6, k = (t * 4 + i * 0.3) % 1; x.save(); x.globalAlpha = (1 - k) * ringK; x.strokeStyle = '#ffe680'; x.lineWidth = 6; x.lineCap = 'round'; x.beginPath(); x.arc(ccx, ccy - cr * 0.3, cr * (1.5 + k * 0.6), a - 0.25 - Math.PI / 2, a + 0.25 - Math.PI / 2); x.stroke(); x.restore(); }
+
+    // hours counter under the clock
+    if (t > TL.hours[0] - 0.25) {
+      const ca = seg(t, TL.hours[0] - 0.25, TL.hours[0]), n = Math.min(8, Math.floor(hp * 8 + 1e-6));
+      const land = seg(t, TL.hours[1], TL.hours[1] + 0.35), pop = 1 + 0.2 * Math.sin(land * Math.PI);
+      x.save(); x.translate(600, 452); x.scale(pop, pop); x.globalAlpha = ca;
+      x.font = F(900, 76); const nw = x.measureText(String(n)).width; x.font = F(900, 40); const lw = x.measureText(n === 1 ? 'hour' : 'hours').width;
+      const tot = nw + 14 + lw;
+      text(x, String(n), -tot / 2 + nw / 2, 0, 76, land > 0 ? C.yellow : '#ffffff');
+      text(x, n === 1 ? 'hour' : 'hours', -tot / 2 + nw + 14 + lw / 2, 8, 40, '#ffe2c4');
+      x.restore();
+    }
+    // arrow clock -> pay
+    arrow(x, [[680, 290], [770, 210], [860, 260], [880, 375]], eio(seg(t, TL.arrow2[0], TL.arrow2[1])), '#7ff0ff', 9, { dots: true, a: 0.85 });
+    // one coin per hour worked
+    for (let i = 0; i < 8; i++) {
+      const s = back(seg(t, HOUR(i), HOUR(i) + 0.3), 1.8); if (s <= 0) continue;
+      const col = i % 4, row = Math.floor(i / 4);
+      coin(x, 870 + col * 82, 430 + row * 86 - (1 - cl(s)) * 30, 34 * s, { glowA: 0.2 });
+    }
+    pill(x, 993, 600, 'Paid by the hour', 30, { s: back(seg(t, TL.payLbl, TL.payLbl + 0.35)), bg: C.yellow });
+    headline(x, t, [['Most', '#ffffff'], ['people', '#ffffff'], ['work', '#ffffff'], ['for', '#ffffff'], ['money', C.yellow]], 128, 54, TL.head2, null);
+
+    // title (hook) and its shrink into the header
+    const tp = eio(seg(t, TL.shrink[0], TL.shrink[1]));
+    if (tp < 1) {
+      const L = [[['How', '#ffffff'], ['do', '#ffffff'], ['rich', C.yellow], ['people', '#ffffff'], ['make', '#ffffff'], ['money', C.yellow]], [['while', '#ffffff'], ['they', '#ffffff'], ['sleep?', C.yellow]]];
+      const px = 66, sc = lerp(1, 0.3, tp);
+      x.save(); x.translate(lerp(640, 206, tp), lerp(180, 44, tp)); x.scale(sc, sc); x.globalAlpha = 1 - seg(tp, 0.6, 1);
+      let k = 0;
+      L.forEach((line, li) => {
+        x.font = F(900, px);
+        const sp = x.measureText(' ').width, ws = line.map(([w]) => x.measureText(w).width), tot = ws.reduce((a, b) => a + b, 0) + sp * (line.length - 1);
+        let wx = -tot / 2;
+        line.forEach(([w, c], i) => {
+          const u = back(seg(t, TL.title + k * 0.1, TL.title + k * 0.1 + 0.4), 1.2); k++;
+          x.save(); x.translate(wx + ws[i] / 2, (li - 0.5) * 84 + (1 - u) * 40); x.scale(u, u); text(x, w, 0, 0, px, c); x.restore();
+          wx += ws[i] + sp;
+        });
+      });
+      x.restore();
+    }
+    if (tp > 0.6) header(x, seg(tp, 0.6, 1));
+  }
+
+  // ================= SCENE B: money works for you -> assets -> rent & dividends =================
+  const COINB = [640, 440];
+  const BABY = [[430, 400], [640, 640], [850, 410]];
+  const KINDS = ['estate', 'stocks', 'business'];
+  const P4 = [[250, 370], [640, 350], [1030, 370]], R4 = 82;
+  const P5 = [[270, 380], [1010, 380], [1450, 300]], R5 = 100;
+  const NAMES4 = ['Real estate', 'Stocks', 'Businesses'];
+  const NAMES5 = ['Rent: monthly', 'Dividends: quarterly'];
+  const MOON4 = [640, 625, 82], MOON5 = [640, 400, 95];
+  const PIG = [640, 600];
+  const STREAMS = [
+    [[300, 460], [360, 560], [500, 625], [610, 612]],
+    [[720, 410], [810, 480], [780, 560], [700, 600]],
+    [[980, 460], [930, 560], [800, 630], [710, 615]],
+  ];
+  const FLOW5 = [[[360, 430], [440, 500], [530, 560], [585, 585]], [[920, 430], [840, 500], [750, 560], [700, 585]]];
+  const assetPos = (i, t) => {
+    const re = eio(seg(t, TL.rearr[0], TL.rearr[1]));
+    const [ax, ay] = P4[i], [bx, by] = P5[i];
+    return [lerp(ax, bx, re), lerp(ay, by, re), lerp(R4, i === 2 ? R4 : R5, re)];
+  };
+  function exB(x, W, H_, t) {
+    const zD = Math.exp(Math.log(14) * H.ease.in(seg(t, TL.toC[0], TL.toC[1])));
+    sky(x, W, H_, t, { x: 400 + t * 16, y: 30, z: zD * (1 + 0.12 * eio(seg(t, 9.3, 10.2))) });
+    x.save(); x.translate(PIG[0], PIG[1]); x.scale(zD, zD); x.translate(-PIG[0], -PIG[1]);
+    planet(x, 1160 - t * 4, 110, 28, PL.moon);
+
+    // --- B3: the coin that works
+    const cOut = eio(seg(t, TL.split[0], TL.split[1]));
+    const cs = back(seg(t, TL.coinIn[0], TL.coinIn[1]), 1.2) * (1 - cOut);
+    const flip = Math.cos(eo(seg(t, TL.coinIn[0], TL.coinIn[0] + 0.8)) * TAU);
+    const working = t > TL.coinHat;
+    coin(x, COINB[0], COINB[1] + Math.sin(t * 1.9) * 8, 130 * cs, {
+      t, face: true, flip, arms: true, armUp: working ? 0.5 + 0.5 * Math.sin(t * 7) : 0, happy: t > TL.line2 + 0.2 ? 1 : 0,
+      look: [0, -0.3], blink: blinkAt(t, 0.2), hard: back(seg(t, TL.coinHat, TL.coinHat + 0.35), 2), glowA: 0.35,
+    });
+    if (t > TL.coinIn[0] + 0.3) burst(x, COINB[0], COINB[1], (t - TL.coinIn[0] - 0.3) * 1.2, 41, 230);
+    pill(x, 905, 300, 'your money', 28, { s: back(seg(t, TL.yourLbl, TL.yourLbl + 0.35)) * (1 - cOut), bg: C.yellow });
+    // babies the coin "earns", later they become the asset planets
+    BABY.forEach((b, i) => {
+      const bt = TL.babies + i * 0.22, bs = back(seg(t, bt, bt + 0.35), 2);
+      if (bs <= 0) return;
+      const sp = eio(seg(t, TL.split[0], TL.split[1])), bl = TL.bloom + i * 0.22;
+      const ox = lerp(COINB[0], b[0], cl(bs)), oy = lerp(COINB[1], b[1], cl(bs)) + Math.sin(t * 2.6 + i * 2) * 6;
+      const px = lerp(ox, P4[i][0], sp), py = lerp(oy, P4[i][1], sp);
+      const r = (30 + 14 * sp) * bs * (1 - seg(t, bl - 0.05, bl + 0.12));
+      if (sp > 0 && sp < 1) glow(x, px, py, 70, '#ffd86a', 0.5 * Math.sin(sp * Math.PI));
+      coin(x, px, py, r, { flip: Math.cos(t * 3 + i), glowA: 0.3 });
+    });
+    // B3 text
+    const strike = eio(seg(t, TL.strike[0], TL.strike[1]));
+    if (t < TL.split[1] + 0.3) {
+      const k1 = back(seg(t, TL.line1, TL.line1 + 0.4), 1.4), out = eio(seg(t, TL.split[0], TL.split[0] + 0.3));
+      if (k1 > 0.01 && out < 1) {
+        x.save(); x.translate(640, 112 - out * 50); x.scale(k1 * (1 - out * 0.2), k1 * (1 - out * 0.2)); x.globalAlpha = (1 - out) * (1 - 0.45 * strike);
+        words(x, [['Work', '#ffffff'], ['for', '#ffffff'], ['money', '#ffffff']], 50);
+        x.font = F(900, 50); const w = x.measureText('Work for money').width;
+        if (strike > 0) { x.globalAlpha = 1 - out; x.strokeStyle = C.red; x.lineWidth = 9; x.lineCap = 'round'; x.beginPath(); x.moveTo(-w / 2 - 14, 4); x.lineTo(-w / 2 - 14 + (w + 28) * strike, -2); x.stroke(); }
+        x.restore();
+      }
+      headline(x, t, [['Make', '#ffffff'], ['money', C.yellow], ['work', '#ffffff'], ['for', '#ffffff'], ['you', C.yellow]], 196, 62, TL.line2, TL.split[0]);
+    }
+
+    // --- B4: asset planets, sleeper, income streams
+    const re = eio(seg(t, TL.rearr[0], TL.rearr[1]));
+    const arrIn = eio(seg(t, TL.split[0], TL.split[1] - 0.05));
+    P4.forEach((p, i) => arrow(x, [[COINB[0], COINB[1]], [lerp(COINB[0], p[0], 0.3), COINB[1] - 60], [lerp(COINB[0], p[0], 0.7), p[1] - 40], p], arrIn, '#ffe680', 7, { dots: true, a: 0.7 * (1 - seg(t, TL.bloom, TL.bloom + 0.6)), head: false }));
+    // moon + sleeper (drawn before the planets so the streams land on top)
+    const mIn = eo(seg(t, TL.moonIn[0], TL.moonIn[1]));
+    const mx = MOON4[0], my = lerp(lerp(900, MOON4[1], mIn), MOON5[1], re), mr = lerp(MOON4[2], MOON5[2], re);
+    if (mIn > 0) {
+      crescentMoon(x, mx, my, mr);
+      const sr = mr * 0.4, s = moonSeat(mx, my, mr, sr);
+      bean(x, s[0], s[1], sr, { t, sleep: true, rot: -0.12, noFeet: true, cap: 1, zzz: seg(t, TL.moonIn[1], TL.moonIn[1] + 0.3), sq: 0.03 * Math.sin(t * 2.4) });
+    }
+    // streams of coins from each asset to the sleeper
+    const sA = 1 - seg(t, TL.rearr[0], TL.rearr[0] + 0.3);
+    STREAMS.forEach((P, i) => arrow(x, P, eio(seg(t, TL.streams + i * 0.12, TL.streams + i * 0.12 + 0.45)), '#7ff0ff', 8, { dots: true, a: 0.75 * sA }));
+    for (const [s, ts] of STREAM_SP) {
+      const u = (t - ts) / STREAM_TRAVEL; if (u <= 0 || u >= 1) continue;
+      const p = bez(STREAMS[s], 0.15 * eio(u) + 0.85 * u);
+      coin(x, p[0], p[1], 17 * back(cl(u / 0.15)) * (1 - 0.6 * H.smooth(0.85, 1, u)), { glowA: 0.4 });
+    }
+    pill(x, 640, 688, 'Income while they sleep', 30, { s: back(seg(t, TL.incomeLbl, TL.incomeLbl + 0.35)) * sA, bg: C.yellow });
+    // the planets themselves
+    KINDS.forEach((k, i) => {
+      const bl = TL.bloom + i * 0.22, s = back(seg(t, bl, bl + 0.45), 1.6);
+      if (s <= 0) return;
+      const [px, py, r] = assetPos(i, t), bob = Math.sin(t * 1.4 + i * 2) * 5;
+      assetPlanet(x, px, py + bob, r * s, k, { a: i === 2 ? 1 - re : 1 });
+      if (t > bl) burst(x, px, py, (t - bl) * 1.3, 60 + i, 150);
+      const lt = bl + 0.25, la = back(seg(t, lt, lt + 0.35)), swap = i < 2 ? seg(t, TL.cal - 0.1, TL.cal + 0.1) : 0;
+      const ly = py + bob + r + 42;
+      if (i === 2) pill(x, px, ly, NAMES4[i], 30, { s: la, a: 1 - re });
+      else {
+        if (swap < 1) pill(x, px, ly, NAMES4[i], 30, { s: la * (1 - swap) });
+        if (swap > 0) pill(x, px, ly, NAMES5[i], 30, { s: back(seg(t, TL.cal, TL.cal + 0.35)), bg: i === 0 ? '#ffd0b8' : '#b8ffd8' });
+      }
+    });
+    headline(x, t, [['Invest', '#ffffff'], ['in', '#ffffff'], ['assets', C.yellow]], 105, 58, TL.head4, TL.rearr[0]);
+
+    // --- B5: rent every month, dividends every quarter, into the piggy bank
+    if (t > TL.cal - 0.05) {
+      let mk = -1; for (let k = 0; k < 6; k++) if (t >= MT(k)) mk = k;
+      const flipK = mk >= 0 ? Math.abs(Math.cos(seg(t, MT(mk) - 0.08, MT(mk) + 0.08) * Math.PI)) : 1;
+      const label = mk < 0 ? 'JAN' : (seg(t, MT(mk) - 0.08, MT(mk) + 0.08) < 0.5 && mk > 0 ? MONTHS[mk - 1] : MONTHS[mk]);
+      calendar(x, 640, 150, 128 * back(seg(t, TL.cal, TL.cal + 0.4)), label, flipK, 1);
+      FLOW5.forEach((P, i) => arrow(x, P, eio(seg(t, TL.cal + 0.05, TL.cal + 0.4)), i ? '#9fffc8' : '#ffd0b8', 8, { dots: true, a: 0.8 }));
+      // coins in flight
+      let total = 0, gulp = 0;
+      for (let k = 0; k < 6; k++) {
+        const pays = [[0, RENT]]; if (DIVM.includes(k)) pays.push([1, DIV]);
+        for (const [s, amt] of pays) {
+          const ts = MT(k) + (s ? 0.06 : 0), u = (t - ts) / TL.travel;
+          if (u >= 1) { total += amt; gulp = Math.max(gulp, 1 - (u - 1) * TL.travel / 0.25); }
+          if (u <= 0 || u >= 1) continue;
+          const p = bez(FLOW5[s], eio(u));
+          coin(x, p[0], p[1] - Math.sin(u * Math.PI) * 30, 20 * back(cl(u / 0.2)) * (1 - 0.6 * H.smooth(0.85, 1, u)), { glowA: 0.4, flip: Math.cos(u * 8) });
+        }
+      }
+      const ps = back(seg(t, TL.pig, TL.pig + 0.4), 1.8);
+      piggy(x, PIG[0], PIG[1] + Math.sin(t * 2) * 3, 56 * ps, { gulp: cl(gulp) * 0.8, blink: blinkAt(t, 1.4), happy: total > 0 ? 1 : 0 });
+      if (ps > 0.5) {
+        const ca = seg(t, TL.pig, TL.pig + 0.3), last = total === RENT * 6 + DIV * 2, pop = 1 + 0.12 * cl(gulp);
+        x.save(); x.translate(735, 598); x.scale(pop, pop); text(x, '$' + total.toLocaleString('en-US'), 0, 0, 64, last ? C.yellow : '#ffffff', { align: 'left', a: ca }); x.restore();
+        text(x, 'while asleep', 737, 650, 28, '#ffd0e0', { align: 'left', a: ca, w: 700 });
+      }
+    }
+    x.restore();
+  }
+
+  // ================= SCENE C: compounding -> risk -> takeaway =================
+  const CH = { x0: 170, x1: 800, y0: 600, y1: 230 }, VMAX = 80000;
+  const gx = (yr) => CH.x0 + (yr / 30) * (CH.x1 - CH.x0), gy = (v) => CH.y0 - (v / VMAX) * (CH.y0 - CH.y1);
+  const IMPACT = [gx(22), gy(V(22))];
+  function exC(x, W, H_, t) {
+    const em = 1 + 1.3 * (1 - eo(seg(t, TL.toC[1], TL.toC[1] + 0.7)));
+    const tk = eio(seg(t, TL.take[0], TL.take[1]));
+    sky(x, W, H_, t, { x: 700 + t * 18, y: 80 - tk * 260, z: em });
+    const out = seg(t, TL.take[0], TL.take[0] + 0.4), oy = -300 * eio(out);
+    const shake = t > TL.ast[1] ? Math.sin(t * 57) * 12 * Math.max(0, 1 - (t - TL.ast[1]) / 0.45) : 0;
+    if (out < 1) {
+      x.save(); x.translate(640, 360); x.scale(em, em); x.translate(-640, -360); x.translate(shake, oy + shake * 0.4); x.globalAlpha = 1 - out;
+      headline(x, t, [['But', '#ffffff'], ["here's", '#ffffff'], ['where', '#ffffff'], ['it', '#ffffff'], ['gets', '#ffffff'], ['interesting', C.yellow]], 108, 50, TL.head6a, TL.head6b - 0.15);
+      headline(x, t, [['Reinvest', C.yellow], ['the', '#ffffff'], ['earnings', '#ffffff']], 108, 58, TL.head6b, TL.head7 - 0.15);
+      headline(x, t, [['Investments', '#ffffff'], ['come', '#ffffff'], ['with', '#ffffff'], ['risk', '#ff8fa8']], 108, 56, TL.head7, null);
+
+      // axes + grid
+      const ax = eio(seg(t, TL.axes[0], TL.axes[1])), la = seg(t, TL.axes[1] - 0.1, TL.axes[1] + 0.2);
+      x.save(); x.lineCap = 'round';
+      for (const v of [40000, 80000]) { x.strokeStyle = 'rgba(200,190,255,0.22)'; x.lineWidth = 3; x.setLineDash([2, 14]); x.beginPath(); x.moveTo(CH.x0, gy(v)); x.lineTo(lerp(CH.x0, CH.x1 + 20, ax), gy(v)); x.stroke(); }
+      x.setLineDash([]); x.strokeStyle = 'rgba(210,200,255,0.8)'; x.lineWidth = 7;
+      x.beginPath(); x.moveTo(CH.x0, CH.y0); x.lineTo(CH.x0, lerp(CH.y0, CH.y1 - 25, ax)); x.stroke();
+      x.beginPath(); x.moveTo(CH.x0, CH.y0); x.lineTo(lerp(CH.x0, CH.x1 + 25, ax), CH.y0); x.stroke();
+      x.restore();
+      for (const v of [0, 40000, 80000]) text(x, v ? '$' + v / 1000 + 'k' : '$0', CH.x0 - 18, gy(v), 28, '#d6cdff', { align: 'right', a: la, w: 700 });
+      [0, 10, 20, 30].forEach((yr) => text(x, String(yr), gx(yr), CH.y0 + 34, 28, '#d6cdff', { a: la, w: 700 }));
+      text(x, 'years', gx(30) + 58, CH.y0 + 34, 28, '#d6cdff', { a: la, w: 700 });
+
+      // the risk cone: the range of outcomes widens with time
+      const ca = seg(t, TL.cone[0], TL.cone[1]);
+      if (ca > 0) {
+        x.save(); x.beginPath(); x.rect(CH.x0, CH.y1 - 30, CH.x1 - CH.x0 + 30, CH.y0 - CH.y1 + 30); x.clip();
+        x.beginPath();
+        for (let i = 0; i <= 40; i++) { const yr = (30 * i) / 40; x.lineTo(gx(yr), gy(V(yr) * (1 + 0.55 * yr / 30))); }
+        for (let i = 40; i >= 0; i--) { const yr = (30 * i) / 40; x.lineTo(gx(yr), gy(V(yr) * (1 - 0.45 * yr / 30))); }
+        x.closePath(); x.fillStyle = H.rgba('#ff5d8f', 0.22 * ca); x.fill();
+        x.restore();
+      }
+
+      // curves: spend the earnings (flat) vs reinvest them (compounding)
+      const c = seg(t, TL.curves[0], TL.curves[1]), yrs = 30 * c;
+      const wobA = eio(seg(t, TL.ast[1], TL.ast[1] + 0.5));
+      const wob = (yr) => wobA * 70 * (yr / 30) * NZ.fbm2(yr * 0.35 + 0.5, 2.3, 3);
+      if (c > 0) {
+        x.save(); x.lineCap = 'round'; x.lineJoin = 'round';
+        x.strokeStyle = C.lav; x.lineWidth = 8; x.beginPath(); x.moveTo(gx(0), gy(10000)); x.lineTo(gx(yrs), gy(10000)); x.stroke();
+        const pts = []; const n = Math.max(2, Math.ceil(80 * c));
+        for (let i = 0; i <= n; i++) { const yr = (yrs * i) / n; pts.push([gx(yr), gy(V(yr)) + wob(yr)]); }
+        const ag = x.createLinearGradient(0, CH.y1, 0, CH.y0); ag.addColorStop(0, 'rgba(255,210,63,0.35)'); ag.addColorStop(1, 'rgba(255,141,63,0.02)');
+        x.beginPath(); x.moveTo(gx(0), CH.y0); pts.forEach(([a, b]) => x.lineTo(a, b)); x.lineTo(pts[pts.length - 1][0], CH.y0); x.closePath(); x.fillStyle = ag; x.fill();
+        const lg = x.createLinearGradient(CH.x0, 0, CH.x1, 0); lg.addColorStop(0, '#ff8d3f'); lg.addColorStop(1, '#ffe680');
+        x.strokeStyle = lg; x.lineWidth = 11; x.beginPath(); pts.forEach(([a, b], i) => (i ? x.lineTo(a, b) : x.moveTo(a, b))); x.stroke();
+        x.restore();
+        const [hx, hy] = pts[pts.length - 1];
+        const la2 = seg(t, TL.curves[0], TL.curves[0] + 0.3) * (1 - seg(t, TL.hit + 0.6, TL.hit + 1.0));
+        loopArrow(x, hx, hy, 46, t * 4, t * 4 + Math.PI * 1.5, '#ffe680', 6, la2);
+        coin(x, hx, hy, 22, { face: true, happy: 1, glowA: 0.5, rot: Math.sin(t * 5) * 0.1 });
+      }
+      const pl = seg(t, TL.hit - 0.1, TL.hit + 0.25);
+      pill(x, gx(30) - 90, gy(10000) - 52, 'Spend it', 30, { s: back(pl), bg: '#e2dcff' });
+      pill(x, gx(30) - 40, gy(V(30)) - 72, 'Reinvest', 30, { s: back(pl), bg: C.yellow, ptr: true });
+      if (t > TL.ast[1]) burst(x, IMPACT[0], IMPACT[1], (t - TL.ast[1]) * 1.2, 303, 180, ['#ff3b5c', '#ffb04a', '#ffe28a', '#ffffff']);
+
+      // the big number
+      const hitK = Math.max(0, 1 - Math.abs(t - TL.hit - 0.15) / 0.75) * (t > TL.hit ? 1 : 0);
+      flare(x, 1040, 330, hitK, t);
+      const na = seg(t, TL.curves[0] - 0.1, TL.curves[0] + 0.2), risk = seg(t, TL.ast[1], TL.ast[1] + 0.3);
+      text(x, c < 1 ? 'Year ' + Math.round(yrs) : 'after 30 years', 1040, 238, 34, '#bfe9ff', { a: na });
+      const pop = t > TL.hit ? 1 + 0.22 * Math.sin(seg(t, TL.hit, TL.hit + 0.35) * Math.PI) : 1;
+      x.save(); x.translate(1040, 330); x.scale(pop, pop);
+      text(x, '$' + Math.round(c > 0 ? V(yrs) : 10000).toLocaleString('en-US'), 0, 0, 96, H.rgba(H.mix(t > TL.hit ? C.yellow : '#ffffff', '#9c93c8', risk * 0.7)), { a: na });
+      x.restore();
+      text(x, '$10,000 at 7% a year', 1040, 418, 28, '#d6cdff', { a: na, w: 700 });
+      badge(x, 1232, 268, 28, 'warn', back(seg(t, TL.ast[1] + 0.1, TL.ast[1] + 0.4), 2));
+      const sw = seg(t, TL.noGuar - 0.1, TL.noGuar + 0.1);
+      pill(x, 1040, 500, 'compound returns', 30, { s: back(seg(t, TL.compLbl, TL.compLbl + 0.35)) * (1 - sw), bg: C.green });
+      pill(x, 1040, 500, 'Profits never guaranteed', 30, { s: back(seg(t, TL.noGuar, TL.noGuar + 0.35), 2), bg: C.red, fg: '#ffffff' });
+      if (t > TL.hit) burst(x, 1040, 330, (t - TL.hit) * 1.0, 97, 320);
+
+      // the asteroid (risk) hits the curve
+      const au = seg(t, TL.ast[0], TL.ast[1]);
+      if (au > 0 && au < 1) { const e = H.ease.in(au), ax0 = 1380, ay0 = -120; const px = lerp(ax0, IMPACT[0], e), py = lerp(ay0, IMPACT[1], e), d = Math.hypot(IMPACT[0] - ax0, IMPACT[1] - ay0); asteroid(x, px, py, 36, (IMPACT[0] - ax0) / d, (IMPACT[1] - ay0) / d); }
+      x.restore();
+    }
+    // red flash on impact
+    const fl = Math.max(0, 1 - Math.abs(t - (TL.ast[1] + 0.08)) / 0.3);
+    if (fl > 0) { const g = x.createRadialGradient(640, 360, 200, 640, 360, 760); g.addColorStop(0, 'rgba(255,59,92,0)'); g.addColorStop(1, H.rgba(C.red, 0.55 * fl)); x.fillStyle = g; x.fillRect(0, 0, W, H_); }
+
+    // takeaway: horizon planet, the character with its assets orbiting, the line
+    if (t > TL.take[0] + 0.1) {
+      const pcy = lerp(1500, 1160, tk);
+      const pal = { ...PL.teal, bands: [...PL.teal.bands, [-0.99, -0.93, '#c6f8ff', 0.38 * tk], [-0.86, -0.79, '#2f74c9', 0.42 * tk], [-0.72, -0.68, '#7fdcff', 0.32 * tk], [-0.62, -0.54, '#2f74c9', 0.3 * tk]] };
+      glow(x, 640, pcy - 780, 500, '#4fc9ff', 0.3 * tk);
+      planet(x, 640, pcy, 780, pal, { glowA: 0, atmo: 1 });
+      const orbit = (front) => KINDS.forEach((k, i) => {
+        const a = t * 0.5 + (i * TAU) / 3 + 0.4, depth = Math.sin(a); if ((depth > 0) !== front) return;
+        const s = back(seg(t, 25.3 + i * 0.12, 25.7 + i * 0.12), 1.6), ox = 640 + Math.cos(a) * 470, oy = 384 + depth * 30, r = 42 * (0.85 + 0.15 * depth) * s;
+        assetPlanet(x, ox, oy, r, k, { glowA: 0.35 });
+        for (let j = 0; j < 4; j++) { const ts = 25.8 + i * 0.2 + j * 0.6, u = (t - ts) / 0.9; if (u > 0 && u < 1) coin(x, ox + Math.sin(u * 5 + i) * 10, oy - r * 1.6 - u * 70, 15 * back(cl(u / 0.2)), { glowA: 0.4 }); }
+      });
+      orbit(false);
+      const bs = back(seg(t, TL.bean8, TL.bean8 + 0.4), 1.6), sleep = t > TL.sleep8 + 0.1;
+      bean(x, 640, 322 + (1 - cl(bs)) * 90 + Math.sin(t * 2) * 4, 66 * bs, {
+        t, happy: sleep ? 0 : 1, sleep, armUp: sleep ? 0 : 1, zzz: sleep ? seg(t, TL.sleep8 + 0.2, TL.sleep8 + 0.5) : 0,
+        zzzRise: 36, hard: 1 - seg(t, TL.sleep8 - 0.05, TL.sleep8 + 0.1), cap: back(seg(t, TL.sleep8 + 0.1, TL.sleep8 + 0.4), 2),
+      });
+      orbit(true);
+      const l1 = back(seg(t, TL.line1T, TL.line1T + 0.4)), l2 = back(seg(t, TL.line2T, TL.line2T + 0.4));
+      x.save(); x.translate(640, 96); x.scale(l1, l1); words(x, [['Build', '#ffffff'], ['assets', '#ffffff']], 68); x.restore();
+      x.save(); x.translate(640, 180); x.scale(l2, l2); words(x, [['that', C.yellow], ['keep', C.yellow], ['earning', C.yellow]], 68); x.restore();
+      if (t > TL.line2T + 0.3) for (let i = 0; i < 7; i++) { const q = H.rng(400 + i); spark(x, q.range(120, 1160), q.range(60, 300), q.range(8, 15) * (0.5 + 0.5 * Math.sin(t * 3 + i)), '#ffffff', seg(t, TL.line2T, TL.line2T + 0.4)); }
+    }
+  }
+
+  // ================= EXPLAINER =================
+  function explainer(ctx, W, H_, t) {
+    const x = ctx;
+    const sw = eio(seg(t, TL.sweep[0], TL.sweep[1])), spx = lerp(W + 980, -980, sw);
+    if (t < TL.sweep[0] || spx > 640) exA(x, W, H_, t);
+    else if (t < TL.toC[1]) exB(x, W, H_, t);
+    else exC(x, W, H_, t);
+    // a giant planet sweeps past the camera: the wipe from "most people" to "the rich"
+    if (sw > 0 && sw < 1) planet(x, spx, 380 + (sw - 0.5) * 120, 880, PL.teal, { glowA: 0.4 });
+    // dive into the piggy bank: warm glow whiteout
+    const wo = seg(t, TL.toC[0] + 0.2, TL.toC[1]) * (1 - seg(t, TL.toC[1], TL.toC[1] + 0.4));
+    if (wo > 0) {
+      const g = x.createRadialGradient(640, 360, 0, 640, 360, 800);
+      g.addColorStop(0, H.rgba('#fff6d0', wo)); g.addColorStop(0.5, H.rgba('#ffc8dc', wo * 0.95)); g.addColorStop(1, H.rgba('#6a4cff', wo * 0.9));
+      x.fillStyle = g; x.fillRect(0, 0, W, H_);
+    }
+    if (t > TL.shrink[1]) header(x, 1);
+    finish(x, W, H_, t);
+  }
+
+  // ================= SOUND =================
+  function scoreSound(k) {
+    const hz = k.hz;
+    const pan = (px) => cl((px / 1280) * 2 - 1, -1, 1) * 0.6;
+    const when = (t0, t1, ease, u) => { for (let i = 0; i <= 400; i++) { const tt = t0 + ((t1 - t0) * i) / 400; if (ease(i / 400) >= u - 1e-6) return tt; } return t1; };
+    const backPeak = (t0, t1, s) => when(t0, t1, (u) => back(u, s), 1);
+    const pluck = (t, n, g = 1, p = 0, minor = false) => {
+      const f = hz(n);
+      k.tone(t, { f, dur: 0.9, gain: 0.2 * g, a: 0.003, pan: p, verb: 0.25, minor });
+      k.tone(t, { f: f * 4, dur: 0.09, gain: 0.04 * g, a: 0.001, pan: p, minor });
+      k.tone(t, { f: f * 2, type: 'triangle', dur: 0.32, gain: 0.045 * g, a: 0.003, pan: p, minor });
+    };
+    const boop = (t, f0, g = 1, p = 0, minor = true) => {
+      k.tone(t, { f: [[0, f0], [0.07, f0 * 1.45], [0.16, f0 * 1.3]], dur: 0.2, gain: 0.17 * g, a: 0.008, pan: p, verb: 0.15, minor });
+      k.tone(t, { f: [[0, f0 * 0.5], [0.08, f0 * 0.72]], type: 'triangle', dur: 0.14, gain: 0.06 * g, a: 0.006, pan: p, minor });
+    };
+    const air = (t, dur, top, g = 1, p = 0, peak = 0.55, minor = false) =>
+      k.noise(t, { dur, color: 'pink', filter: 'bandpass', f: [[0, 260], [dur * peak, top], [dur, 340]], q: 0.55, gain: 0.26 * g, a: dur * peak, pan: p, verb: 0.3, minor });
+    const chord = (t, notes, g = 1, dur = 2.2) => notes.forEach((n, i) => {
+      k.tone(t + i * 0.012, { f: n, type: 'triangle', dur, gain: 0.07 * g, a: 0.02, verb: 0.35, filter: 'lowpass', f2: 1800, pan: (i / (notes.length - 1) - 0.5) * 0.6 });
+      k.tone(t + i * 0.012, { f: hz(n) * 1.003, dur, gain: 0.06 * g, a: 0.03, verb: 0.35 });
+    });
+    const shimmer = (t, notes, g = 1, p = 0) => k.withMinor(() => notes.forEach((n, i) => k.tone(t + i * 0.055, { f: n, dur: 0.7, gain: 0.07 * g, a: 0.004, verb: 0.4, pan: p + (i % 2 ? 0.25 : -0.25) })));
+    // a soft gold-coin clink: two bright inharmonic partials and a tiny tick
+    const clink = (t, g = 1, p = 0, n = 'E7', minor = true) => {
+      const f = hz(n);
+      k.tone(t, { f, dur: 0.32, gain: 0.06 * g, a: 0.001, pan: p, verb: 0.2, minor });
+      k.tone(t + 0.004, { f: f * 1.47, dur: 0.18, gain: 0.035 * g, a: 0.001, pan: p, minor });
+      k.noise(t, { dur: 0.012, filter: 'highpass', f: 6000, gain: 0.08 * g, pan: p, minor });
+    };
+    const snore = (t, g = 1) => k.noise(t, { dur: 0.9, color: 'brown', filter: 'lowpass', f: [[0, 180], [0.5, 420], [0.9, 200]], gain: 0.14 * g, a: 0.45, minor: true });
+    const nope = (t, p = 0, g = 1) => {
+      k.tone(t, { f: 'E3', type: 'triangle', dur: 0.26, gain: 0.22 * g, hold: 0.1, filter: 'lowpass', f2: 900, pan: p });
+      k.tone(t + 0.2, { f: 'C3', type: 'triangle', dur: 0.45, gain: 0.22 * g, hold: 0.16, filter: 'lowpass', f2: 800, pan: p });
+      k.tone(t + 0.2, { f: 'C2', dur: 0.45, gain: 0.16 * g, hold: 0.16 });
+    };
+
+    // soft wonder-pad under everything: Fmaj7 -> Em7 -> Dm7 -> Cmaj7
+    k.music('pad', 0, D, { bpm: 64, gain: 0.42, chords: [['F3', 'A3', 'C4', 'E4'], ['E3', 'G3', 'B3', 'D4'], ['D3', 'F3', 'A3', 'C4'], ['C3', 'E3', 'G3', 'B3']] });
+
+    // ---- 1 HOOK: the camera pulls back, the moon rises, the title pops word by word
+    air(0, 1.3, 1500, 0.8, 0, 0.35);
+    ['C4', 'D4', 'E4', 'G4', 'A4', 'C5', 'D5', 'E5', 'G5'].forEach((n, i) => { if (i % 2 === 0 || i === 8) pluck(TL.title + i * 0.1 + 0.08, n, i === 8 ? 1 : 0.7, (i / 8 - 0.5) * 0.5, i < 8); });
+    snore(0.55, 0.8); snore(1.6, 0.7);
+    k.noise(TL.shrink[0], { dur: 0.6, color: 'pink', filter: 'bandpass', f: [[0, 700], [0.6, 300]], q: 0.7, gain: 0.08, a: 0.2, pan: -0.3, minor: true });
+
+    // ---- 2 WAKE UP AND WORK
+    boop(backPeak(TL.alarm, TL.alarm + 0.3, 1.8), 600, 0.9, pan(890), false);
+    for (let tt = TL.ring[0]; tt < TL.ring[1]; tt += 0.045) {
+      k.tone(tt, { f: 2350, type: 'triangle', dur: 0.05, gain: 0.05, a: 0.001, pan: pan(890) + 0.05 * Math.sin(tt * 60) });
+      k.noise(tt, { dur: 0.015, filter: 'bandpass', f: 3600, q: 3, gain: 0.07, pan: pan(890) });
+    }
+    boop(TL.wake, 300, 1.1, pan(680), false); // startled awake
+    k.play('swish', TL.capOff[0], { dur: 0.22, gain: 0.7, pan: pan(680) }); // nightcap off
+    air(TL.hop[0], 0.7, 1200, 0.6, -0.2, 0.5, true); // hop off the moon
+    chord(3.0, ['C4', 'E4', 'G4', 'C5'], 0.45, 1.6); // the sun comes up
+    pluck(backPeak(TL.head2, TL.head2 + 0.4, 1.4), 'E4', 0.9, 0);
+    k.play('tock', backPeak(TL.hat, TL.hat + 0.35, 2), { f: 520, gain: 0.7, pan: pan(330) }); // hard hat clonks on
+    air(TL.clockMove[0], 0.5, 1000, 0.35, 0, 0.5, true);
+    for (let i = 1; i <= 4; i++) k.play('tock', when(TL.arrow2[0], TL.arrow2[1], eio, i / 4), { f: 560 + i * 50, gain: 0.3, pan: pan(680 + i * 50), minor: true });
+    for (let i = 0; i < 8; i++) { const tc = when(HOUR(i), HOUR(i) + 0.3, (u) => back(u, 1.8), 1); k.play('tock', HOUR(i), { f: 900, gain: 0.35, pan: pan(600), minor: true }); clink(tc, 0.9, pan(870 + (i % 4) * 82), i % 2 ? 'D7' : 'E7'); }
+    pluck(TL.hours[1], 'A4', 1.0, pan(600)); // "8 hours" lands
+    pluck(backPeak(TL.payLbl, TL.payLbl + 0.35), 'C4', 0.8, pan(993), true);
+
+    // ---- transition: a giant planet sweeps past the camera
+    air(TL.sweep[0], TL.sweep[1] - TL.sweep[0], 1300, 1.3, 0, 0.5);
+    k.noise(TL.sweep[0] + 0.1, { dur: 0.75, color: 'brown', filter: 'lowpass', f: 260, gain: 0.32, a: 0.35, verb: 0.2 });
+    k.tone(TL.sweep[0] + 0.1, { f: [[0, 70], [0.4, 58], [0.75, 46]], dur: 0.75, gain: 0.16, a: 0.3 });
+
+    // ---- 3 MONEY THAT WORKS
+    shimmer(TL.coinIn[0] + 0.1, ['G5', 'C6', 'E6', 'G6'], 0.8, 0);
+    boop(backPeak(TL.coinIn[0], TL.coinIn[1], 1.2), 440, 1.0, 0, false);
+    pluck(backPeak(TL.line1, TL.line1 + 0.4, 1.4), 'D4', 0.8, 0);
+    k.play('swish', TL.strike[0], { dur: TL.strike[1] - TL.strike[0], gain: 0.9 });
+    nope(TL.strike[1] - 0.05, 0, 0.6);
+    pluck(backPeak(TL.line2, TL.line2 + 0.4, 1.4), 'C4', 1.0, 0); chord(backPeak(TL.line2, TL.line2 + 0.4, 1.4), ['C4', 'E4', 'G4', 'D5'], 0.7, 1.4);
+    pluck(backPeak(TL.yourLbl, TL.yourLbl + 0.35), 'G4', 0.7, pan(905), true);
+    k.play('tock', backPeak(TL.coinHat, TL.coinHat + 0.35, 2), { f: 560, gain: 0.7 });
+    ['E5', 'G5', 'C6'].forEach((n, i) => { const bt = backPeak(TL.babies + i * 0.22, TL.babies + i * 0.22 + 0.35, 2); boop(bt, 500 + i * 90, 0.7, pan(BABY[i][0])); clink(bt + 0.02, 0.8, pan(BABY[i][0]), n.replace('5', '7').replace('6', '7')); });
+
+    // ---- 4 ASSETS
+    air(TL.split[0], 0.6, 1800, 0.9, 0, 0.6);
+    pluck(backPeak(TL.head4, TL.head4 + 0.4, 1.4), 'E4', 0.9, 0);
+    ['C4', 'E4', 'G4'].forEach((n, i) => { const bt = backPeak(TL.bloom + i * 0.22, TL.bloom + i * 0.22 + 0.45, 1.6); boop(bt, 330 + i * 60, 0.9, pan(P4[i][0]), false); pluck(bt + 0.25, n, 0.6, pan(P4[i][0]), true); });
+    air(TL.moonIn[0], 0.6, 900, 0.5, 0, 0.6, true);
+    snore(TL.moonIn[1] + 0.1, 0.7); snore(12.5, 0.6);
+    for (let i = 0; i < 3; i++) k.play('tock', TL.streams + i * 0.12 + 0.45, { f: 640 + i * 80, gain: 0.3, pan: pan(STREAMS[i][0][0]), minor: true });
+    const arrivals = STREAM_SP.map(([s, ts]) => [s, ts + STREAM_TRAVEL]).sort((a, b) => a[1] - b[1]);
+    let lastC = -1; for (const [s, ta] of arrivals) { if (ta - lastC < 0.09) continue; clink(ta, 0.6, pan(STREAMS[s][3][0]), ['E7', 'G7', 'D7'][s]); lastC = ta; }
+    pluck(backPeak(TL.incomeLbl, TL.incomeLbl + 0.35), 'A4', 0.8, 0);
+
+    // ---- 5 RENT AND DIVIDENDS
+    air(TL.rearr[0], 0.7, 1100, 0.6, 0, 0.5, true);
+    boop(backPeak(TL.cal, TL.cal + 0.4), 520, 0.8, 0, false);
+    boop(backPeak(TL.pig, TL.pig + 0.4, 1.8), 260, 1.0, 0, false);
+    for (let m = 0; m < 6; m++) {
+      k.play('paper', MT(m) - 0.06, { dur: 0.12, gain: 0.8 });
+      clink(MT(m) + TL.travel, 0.9, -0.1, m % 2 ? 'D7' : 'E7', false);
+      k.play('tock', MT(m) + TL.travel + 0.02, { f: 700 + m * 40, gain: 0.3, minor: true });
+      if (DIVM.includes(m)) clink(MT(m) + 0.06 + TL.travel, 0.8, 0.15, 'B7');
+    }
+    pluck(MT(5) + TL.travel + 0.03, 'G4', 1.0, 0.1); pluck(MT(5) + TL.travel + 0.1, 'C5', 0.8, 0.1); // $9,600 lands
+
+    // ---- transition: dive into the piggy bank
+    air(TL.toC[0], TL.toC[1] - TL.toC[0] + 0.1, 2200, 1.2, 0, 0.9);
+    k.tone(TL.toC[0], { f: [[0, 110], [0.55, 330]], type: 'triangle', dur: 0.6, gain: 0.07, a: 0.5 });
+    chord(TL.toC[1], ['C3', 'G3', 'E4'], 0.6, 1.4);
+
+    // ---- 6 COMPOUNDING
+    pluck(backPeak(TL.head6a, TL.head6a + 0.4, 1.4), 'G4', 0.9, 0); shimmer(TL.head6a + 0.2, ['E6', 'G6'], 0.5, 0);
+    for (let i = 1; i <= 4; i++) k.play('tock', when(TL.axes[0], TL.axes[1], eio, i / 4), { f: 480 + i * 60, gain: 0.3, pan: -0.4, minor: true });
+    pluck(backPeak(TL.head6b, TL.head6b + 0.4, 1.4), 'C4', 1.0, 0);
+    for (let tt = TL.curves[0], last = -1, lastT = -1; tt < TL.curves[1]; tt += 1 / 120) {
+      const v = Math.round(V(30 * seg(tt, TL.curves[0], TL.curves[1])) / 2000);
+      if (v !== last && tt - lastT >= 1 / 11) { k.play('tock', tt, { f: 560 + v * 14, gain: 0.45, pan: pan(1040), minor: true }); last = v; lastT = tt; }
+    }
+    for (let tt = TL.curves[0] + 0.3; tt < TL.hit - 0.2; tt += 0.55) clink(tt, 0.45, pan(600)); // reinvesting loop
+    k.noise(TL.hit - 0.8, { dur: 0.85, color: 'pink', filter: 'bandpass', f: [[0, 250], [0.8, 1800]], q: 0.8, gain: 0.24, a: 0.78, verb: 0.3 });
+    k.tone(TL.hit - 0.8, { f: [[0, 110], [0.8, 220]], type: 'triangle', dur: 0.82, gain: 0.08, a: 0.75 });
+    k.play('impact', TL.hit, { gain: 0.75 });
+    chord(TL.hit, ['A2', 'E3', 'A3', 'C#4', 'E4', 'B4'], 1.6, 2.2);
+    shimmer(TL.hit + 0.08, ['E5', 'A5', 'C#6', 'E6', 'B5'], 0.8, 0.3);
+    pluck(backPeak(TL.compLbl, TL.compLbl + 0.35), 'E5', 0.6, pan(1040), true);
+
+    // ---- 7 RISK
+    pluck(backPeak(TL.head7, TL.head7 + 0.4, 1.4), 'D4', 0.8, 0);
+    k.noise(TL.ast[0], { dur: TL.ast[1] - TL.ast[0], color: 'pink', filter: 'bandpass', f: [[0, 2600], [TL.ast[1] - TL.ast[0], 500]], q: 0.8, gain: 0.3, a: 0.55, pan: 0.3, verb: 0.2 });
+    k.play('impact', TL.ast[1], { gain: 0.6, pan: pan(IMPACT[0]) });
+    nope(TL.ast[1] + 0.12, pan(IMPACT[0]), 0.9);
+    k.play('tock', backPeak(TL.ast[1] + 0.1, TL.ast[1] + 0.4, 2), { f: 400, gain: 0.5, pan: pan(1232) });
+    air(TL.cone[0], 0.6, 900, 0.4, -0.2, 0.6, true);
+    k.play('thud', backPeak(TL.noGuar, TL.noGuar + 0.35, 2), { f: 120, gain: 0.45, pan: pan(1040) }); pluck(backPeak(TL.noGuar, TL.noGuar + 0.35, 2), 'A3', 0.8, pan(1040));
+
+    // ---- 8 TAKEAWAY
+    air(TL.take[0], TL.take[1] - TL.take[0], 1000, 0.6, 0, 0.5, true);
+    boop(backPeak(TL.bean8, TL.bean8 + 0.4, 1.6), 400, 0.9, 0);
+    [0, 1, 2].forEach((i) => boop(backPeak(25.3 + i * 0.12, 25.7 + i * 0.12, 1.6), 480 + i * 70, 0.6, (i - 1) * 0.4));
+    pluck(backPeak(TL.line1T, TL.line1T + 0.4), 'E4', 0.9, 0);
+    const l2 = backPeak(TL.line2T, TL.line2T + 0.4);
+    chord(l2, ['C3', 'G3', 'C4', 'E4', 'G4', 'D5'], 1.1, 2.0); pluck(l2, 'C4', 1.0, 0); shimmer(l2 + 0.1, ['G5', 'C6', 'E6'], 0.6, 0);
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 4; j++) { const ts = 25.8 + i * 0.2 + j * 0.6; if (ts < D - 0.4) clink(ts + 0.1, 0.35, (i - 1) * 0.4); }
+    k.play('swish', TL.sleep8 - 0.05, { dur: 0.2, gain: 0.6 });
+    snore(TL.sleep8 + 0.25, 0.9);
+  }
+
+  window.FV = { explainer, scoreSound, DURATION: D, TL };
+})();
