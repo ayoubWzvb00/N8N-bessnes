@@ -1,0 +1,83 @@
+<title>Money While You Sleep</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700;900&display=block">
+<style>
+  /* Layout: full-window letterboxed 16:9 stage with a slim control bar underneath. Single dark look, like the piece. */
+  :root { --bg: #05061a; --bar: #13123f; --fg: #eeeaff; --muted: #b3aade; --gold: #ffd23f; --track: #2e2a6e; color-scheme: dark; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: "Nunito", system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden; }
+  .stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+  canvas { display: block; background: #090b2c; }
+  .bar { display: flex; align-items: center; gap: 12px; padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); background: var(--bar); }
+  button { font: 900 14px "Nunito", system-ui, sans-serif; color: var(--fg); background: var(--track); border: 0; border-radius: 99px; padding: 8px 14px; cursor: pointer; min-width: 44px; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  button[aria-pressed="true"] { background: var(--gold); color: #141846; }
+  input[type=range] { flex: 1; min-width: 0; accent-color: var(--gold); }
+  .time { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--muted); font-size: 13px; white-space: nowrap; }
+</style>
+
+<div class="stage" id="stage"><canvas id="cv" width="1280" height="720"></canvas></div>
+<div class="bar">
+  <button id="play" aria-label="Play">▶</button>
+  <input id="scrub" type="range" min="0" max="28" step="0.01" value="0" aria-label="Scrub">
+  <span class="time" id="time">0.0 / 28.0 s</span>
+  <button id="snd" aria-pressed="true">Sound on</button>
+  <button id="loop" aria-pressed="true">Loop</button>
+</div>
+
+<script>
+/*HARNESS*/
+</script>
+<script>
+/*SOUND*/
+</script>
+<script>
+/*STYLE*/
+</script>
+<script>
+const DURATION = FV.DURATION;
+const explainer = FV.explainer, scoreSound = FV.scoreSound;
+window.DURATION = DURATION; window.scoreSound = scoreSound;
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const playBtn = document.getElementById('play'), scrub = document.getElementById('scrub'), timeEl = document.getElementById('time');
+const sndBtn = document.getElementById('snd'), loopBtn = document.getElementById('loop');
+scrub.max = DURATION;
+let currentT = 0, playing = false, soundOn = true, loop = true, last = 0, stopSound = null, fontsReady = false;
+
+function draw(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.save(); ctx.scale(cv.width / 1280, cv.height / 720); explainer(ctx, 1280, 720, t); ctx.restore();
+}
+window.seek = (t) => { currentT = Math.max(0, Math.min(DURATION, t)); draw(currentT); scrub.value = currentT; timeEl.textContent = currentT.toFixed(1) + ' / ' + DURATION.toFixed(1) + ' s'; };
+
+function fit() {
+  const st = document.getElementById('stage'), w = st.clientWidth, h = st.clientHeight, s = Math.min(w / 1280, h / 720);
+  cv.style.width = Math.floor(1280 * s) + 'px'; cv.style.height = Math.floor(720 * s) + 'px';
+  const dpr = Math.min(2, window.devicePixelRatio || 1), pw = Math.round(1280 * s * dpr), ph = Math.round(720 * s * dpr);
+  if (cv.width !== pw || cv.height !== ph) { cv.width = pw; cv.height = ph; }
+  if (fontsReady) seek(currentT);
+}
+function killSound() { if (stopSound) { stopSound(); stopSound = null; } }
+function startSound() { killSound(); if (soundOn && playing) stopSound = SOUND.live(scoreSound, currentT, { voiceover: false }); }
+function setPlaying(p) {
+  playing = p; playBtn.textContent = p ? '❚❚' : '▶'; playBtn.setAttribute('aria-label', p ? 'Pause' : 'Play');
+  if (p) { if (currentT >= DURATION - 0.01) seek(0); last = performance.now(); startSound(); requestAnimationFrame(tick); } else killSound();
+}
+function tick(now) {
+  if (!playing) return;
+  let t = currentT + (now - last) / 1000; last = now;
+  if (t >= DURATION) { if (loop) { t = 0; seek(0); startSound(); } else { seek(DURATION); setPlaying(false); return; } }
+  seek(t); requestAnimationFrame(tick);
+}
+playBtn.onclick = () => setPlaying(!playing);
+scrub.oninput = () => { killSound(); seek(+scrub.value); if (playing) { last = performance.now(); startSound(); } };
+sndBtn.onclick = () => { soundOn = !soundOn; sndBtn.textContent = soundOn ? 'Sound on' : 'Sound off'; sndBtn.setAttribute('aria-pressed', soundOn); soundOn ? startSound() : killSound(); };
+loopBtn.onclick = () => { loop = !loop; loopBtn.setAttribute('aria-pressed', loop); };
+document.addEventListener('keydown', (e) => { if (e.code === 'Space' && e.target === document.body) { e.preventDefault(); setPlaying(!playing); } });
+window.addEventListener('resize', fit);
+window.ready = (async () => {
+  for (const f of ['900 64px "Nunito"', '700 28px "Nunito"', '600 32px "Fredoka"']) { try { await document.fonts.load(f, 'AaZz09$'); } catch (e) {} }
+  fontsReady = true; fit(); seek(0);
+})();
+</script>

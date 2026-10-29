@@ -1024,7 +1024,7 @@
       glow(x, 640, pcy - 780, 500, '#4fc9ff', 0.3 * tk);
       planet(x, 640, pcy, 780, pal, { glowA: 0, atmo: 1 });
       const orbit = (front) => KINDS.forEach((k, i) => {
-        const a = t * 0.5 + (i * TAU) / 3 + 0.4, depth = Math.sin(a); if ((depth > 0) !== front) return;
+        const a = t * 0.5 + (i * TAU) / 3 + 1.45, depth = Math.sin(a); if ((depth > 0) !== front) return;
         const s = back(seg(t, 25.3 + i * 0.12, 25.7 + i * 0.12), 1.6), ox = 640 + Math.cos(a) * 470, oy = 384 + depth * 30, r = 42 * (0.85 + 0.15 * depth) * s;
         assetPlanet(x, ox, oy, r, k, { glowA: 0.35 });
         for (let j = 0; j < 4; j++) { const ts = 25.8 + i * 0.2 + j * 0.6, u = (t - ts) / 0.9; if (u > 0 && u < 1) coin(x, ox + Math.sin(u * 5 + i) * 10, oy - r * 1.6 - u * 70, 15 * back(cl(u / 0.2)), { glowA: 0.4 }); }
