@@ -2,8 +2,8 @@
 window.BEATS = [
   { name: 'Hook', t0: 0, t1: 5.0, key: 4.5,
     text: '"EVERY DOLLAR / YOU SPEND / IS GONE" (red) → "EVERY DOLLAR / YOU KEEP / GOES TO WORK" (gold).',
-    flow: ['cont', 'Frame 0 opens on a huge spinning gold coin with a shockwave ring and "EVERY DOLLAR" already on screen. On "spend" the coin flies off; on "gone" it pops into red sparks, leaving a dotted empty outline with a red X (red flash + shake). On "keep" a new coin pops in with a face; on "goes" a hard hat drops onto it, on "to work" it lifts a hammer and starts working while a line of little worker coins marches through.'],
-    sound: 'Soft low hit + swish + coin clink on frame 0, a swish as the coin flies off, a light stamp on "gone", a soft pop, a tock + small sparkle for the hard hat, hammer taps.' },
+    flow: ['cont', 'Frame 0 opens on a huge spinning gold coin with a shockwave ring, coins raining down behind it and "EVERY DOLLAR" already on screen. On "spend" a red money vortex opens and swallows the coin and all the falling coins in a spiral; on "gone" it collapses into red sparks, leaving a dotted empty outline with a red X (red flash + shake). On "keep" a new coin pops in with a face; on "goes" a hard hat drops onto it, on "to work" it cheers and lifts a hammer while an army of worker coins floods in from every side.'],
+    sound: 'Soft low hit + swish + coin clink on frame 0, a swish and a falling suction sweep into the vortex, a light stamp on "gone", a soft pop, a tock + small sparkle for the hard hat, hammer taps.' },
   { name: 'Money is simple?', t0: 5.0, t1: 9.1, key: 8.5,
     text: '"MOST PEOPLE THINK / MONEY IS SIMPLE" → "EARN IT (gold) / SPEND IT (red)".',
     flow: ['cont', 'A big purple wallet pops in; a coin drops into it on "simple". On "earn it" three coins arc in from the left and the wallet gulps; on "spend it" three coins shoot out to the right under a faint red glow.'],
