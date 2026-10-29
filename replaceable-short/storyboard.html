@@ -1,0 +1,1393 @@
+<title>Replaceable Short Storyboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700;900&display=block">
+<style>
+  /* Layout: a production storyboard sheet; two-column grid of 16:9 key frames, notes under each. Single deliberate dark look matching the piece. */
+  :root {
+    --bg: #0d0f33; --panel: #17154a; --line: #2e2a6e; --fg: #eeeaff; --muted: #b3aade; --gold: #ffd23f; --cyan: #7ff0ff; --pink: #ff8fb8;
+    --display: "Nunito", "Fredoka", system-ui, sans-serif; --body: "Nunito", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding-block: 32px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  header.top { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; justify-content: space-between; margin-bottom: 24px; }
+  h1 { font-family: var(--display); font-weight: 900; font-size: clamp(26px, 4vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; }
+  h1 em { color: var(--gold); font-style: normal; }
+  .meta { color: var(--muted); font-weight: 700; letter-spacing: 0.04em; font-size: 13px; text-transform: uppercase; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 24px; }
+  .beat { background: var(--panel); border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+  .beat canvas { width: 100%; height: auto; aspect-ratio: 9 / 16; display: block; background: #090b2c; }
+  .notes { padding: 14px 18px 18px; display: grid; gap: 8px; }
+  .head { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+  .num { font-family: var(--display); font-weight: 900; font-size: 22px; color: var(--gold); }
+  .name { font-weight: 900; font-size: 17px; }
+  .time { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--cyan); font-weight: 700; font-size: 13px; }
+  dl { margin: 0; display: grid; grid-template-columns: 1fr; gap: 6px 12px; }
+  dt { color: var(--muted); font-weight: 700; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; padding-top: 6px; }
+  dd { margin: 0; min-width: 0; }
+  dd q { quotes: none; font-weight: 900; color: #fff; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; padding: 1px 8px; border-radius: 99px; margin-right: 6px; background: var(--line); color: var(--cyan); }
+  .tag.cut { color: var(--pink); }
+  .assume { margin-top: 32px; background: var(--panel); border-radius: 18px; padding: 18px 22px; }
+  .assume h2 { font-family: var(--display); font-size: 20px; margin: 0 0 8px; }
+  .assume ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+  .assume b { color: var(--gold); }
+  @media (max-width: 520px) { dl { grid-template-columns: 1fr; } dt { padding-top: 6px; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>You're paid for how <em>replaceable</em> you are</h1>
+    <div class="meta">Flat-Vector Science · 9:16 TikTok · storyboard · 9 beats · 68 s</div>
+  </header>
+  <div class="grid" id="grid"></div>
+  <section class="assume">
+    <h2>Notes and assumptions</h2>
+    <ul>
+      <li><b>Timing comes from your voice track.</b> I transcribed it with word timestamps; every headline word lands on the frame it is spoken. Length is 68.4 s (voice 68.0 s plus a short hold).</li>
+      <li><b>On-screen text:</b> English, key lines only (no full captions), keywords coloured: gold = value, red = the trap, cyan = hard to replace.</li>
+      <li><b>Safe zones:</b> headlines sit between y 230 and 650 of 1920 and subjects in the middle; the bottom fifth and right edge stay clear for TikTok's caption and buttons.</li>
+      <li><b>Sound:</b> voice first. Effects only (no music), short and quiet, and ducked under the voice in the final mix; I'll check the levels with a meter before delivering.</li>
+      <li><b>Illustrative, not data:</b> the price tags ($ to $$$$) and the "+7 DAYS" calendar illustrate the script's ideas; no salary figures are claimed.</li>
+      <li>Hook: the very first frame already shows the clock and "YOU'RE NOT PAID", so the thumbnail and the first swipe both carry the hook.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+// Shared helpers + style registry for the style-frame explorations.
+// Every style is a pure function of time: draw(ctx, W, H, t). Same t => same pixels.
+(function () {
+  const STYLES = (window.STYLES = window.STYLES || []);
+  window.registerStyle = (s) => STYLES.push(s);
+
+  const H = (window.H = {});
+
+  // ---------- seeded randomness ----------
+  // H.rng(seed) -> r() in [0,1). Extras: r.range(a,b), r.int(a,b), r.pick(arr), r.gauss(), r.chance(p)
+  H.rng = function (seed = 1) {
+    let a = typeof seed === 'string' ? hashStr(seed) : (seed >>> 0) || 1;
+    const r = function () {
+      a |= 0; a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    r.range = (lo, hi) => lo + r() * (hi - lo);
+    r.int = (lo, hi) => Math.floor(lo + r() * (hi - lo + 1));
+    r.pick = (arr) => arr[Math.floor(r() * arr.length)];
+    r.chance = (p) => r() < p;
+    r.gauss = () => { let u = 0, v = 0; while (!u) u = r(); while (!v) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+    return r;
+  };
+  function hashStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+
+  // ---------- gradient noise ----------
+  // H.makeNoise(seed) -> { n2(x,y), n3(x,y,z), fbm2(x,y,oct), fbm3(x,y,z,oct) }  (outputs roughly -1..1)
+  H.makeNoise = function (seed = 1) {
+    const r = H.rng(seed), p = new Uint8Array(512), perm = [...Array(256).keys()];
+    for (let i = 255; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [perm[i], perm[j]] = [perm[j], perm[i]]; }
+    for (let i = 0; i < 512; i++) p[i] = perm[i & 255];
+    const fade = (t) => t * t * t * (t * (t * 6 - 15) + 10);
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const g3 = (h, x, y, z) => { h &= 15; const u = h < 8 ? x : y, v = h < 4 ? y : h === 12 || h === 14 ? x : z; return ((h & 1) ? -u : u) + ((h & 2) ? -v : v); };
+    function n3(x, y, z) {
+      const X = Math.floor(x) & 255, Y = Math.floor(y) & 255, Z = Math.floor(z) & 255;
+      x -= Math.floor(x); y -= Math.floor(y); z -= Math.floor(z);
+      const u = fade(x), v = fade(y), w = fade(z);
+      const A = p[X] + Y, AA = p[A] + Z, AB = p[A + 1] + Z, B = p[X + 1] + Y, BA = p[B] + Z, BB = p[B + 1] + Z;
+      return lerp(lerp(lerp(g3(p[AA], x, y, z), g3(p[BA], x - 1, y, z), u), lerp(g3(p[AB], x, y - 1, z), g3(p[BB], x - 1, y - 1, z), u), v),
+        lerp(lerp(g3(p[AA + 1], x, y, z - 1), g3(p[BA + 1], x - 1, y, z - 1), u), lerp(g3(p[AB + 1], x, y - 1, z - 1), g3(p[BB + 1], x - 1, y - 1, z - 1), u), v), w);
+    }
+    const n2 = (x, y) => n3(x, y, 0.5);
+    const fbm3 = (x, y, z, oct = 4) => { let s = 0, a = 0.5, f = 1, norm = 0; for (let i = 0; i < oct; i++) { s += a * n3(x * f, y * f, z * f); norm += a; a *= 0.5; f *= 2; } return s / norm; };
+    const fbm2 = (x, y, oct = 4) => fbm3(x, y, 0.5, oct);
+    return { n2, n3, fbm2, fbm3 };
+  };
+
+  // ---------- math ----------
+  H.lerp = (a, b, t) => a + (b - a) * t;
+  H.clamp = (v, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, v));
+  H.map = (v, a, b, c, d) => c + ((v - a) / (b - a)) * (d - c);
+  H.smooth = (e0, e1, x) => { const t = H.clamp((x - e0) / (e1 - e0)); return t * t * (3 - 2 * t); };
+  H.ease = {
+    inOut: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2),
+    out: (t) => 1 - Math.pow(1 - t, 3),
+    in: (t) => t * t * t,
+    back: (t) => { const c = 1.70158; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); },
+  };
+
+  // ---------- color ----------
+  H.hex = (h) => { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map((c) => c + c).join(''); const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+  H.rgba = (hexOrArr, a = 1) => { const [r, g, b] = Array.isArray(hexOrArr) ? hexOrArr : H.hex(hexOrArr); return `rgba(${r | 0},${g | 0},${b | 0},${a})`; };
+  H.mix = (c1, c2, t) => { const a = Array.isArray(c1) ? c1 : H.hex(c1), b = Array.isArray(c2) ? c2 : H.hex(c2); return [0, 1, 2].map((i) => a[i] + (b[i] - a[i]) * t); };
+
+  // ---------- canvas utilities ----------
+  // Offscreen canvas of the same logical size (use for layers, masks, compositing).
+  H.layer = (W, H_, ) => { const c = document.createElement('canvas'); c.width = W; c.height = H_; return c; };
+  // Monochrome grain / film noise over the whole canvas. amount ~ 0.03-0.15
+  H.grain = function (ctx, W, Hh, amount = 0.08, seed = 7, mono = true) {
+    const img = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height), d = img.data, r = H.rng(seed), k = amount * 255;
+    for (let i = 0; i < d.length; i += 4) {
+      const n = (r() - 0.5) * k;
+      if (mono) { d[i] += n; d[i + 1] += n; d[i + 2] += n; }
+      else { d[i] += (r() - 0.5) * k; d[i + 1] += (r() - 0.5) * k; d[i + 2] += (r() - 0.5) * k; }
+    }
+    ctx.putImageData(img, 0, 0);
+  };
+  // Paper-ish texture tile: fills with base color + fibrous noise (cheap; drawn into ctx).
+  H.paper = function (ctx, W, Hh, base = '#f3ecdc', seed = 3, strength = 0.06) {
+    ctx.save(); ctx.fillStyle = base; ctx.fillRect(0, 0, W, Hh);
+    const nz = H.makeNoise(seed), cell = 4, [br, bg, bb] = H.hex(base);
+    for (let y = 0; y < Hh; y += cell) for (let x = 0; x < W; x += cell) {
+      const v = nz.fbm2(x * 0.01, y * 0.01, 3) * 0.6 + nz.n2(x * 0.15, y * 0.04) * 0.4;
+      const s = 1 + v * strength * 2;
+      ctx.fillStyle = `rgb(${br * s | 0},${bg * s | 0},${bb * s | 0})`; ctx.fillRect(x, y, cell, cell);
+    }
+    ctx.restore();
+  };
+  // Vignette
+  H.vignette = function (ctx, W, Hh, strength = 0.5, color = '0,0,0') {
+    const g = ctx.createRadialGradient(W / 2, Hh / 2, Math.min(W, Hh) * 0.3, W / 2, Hh / 2, Math.hypot(W, Hh) * 0.6);
+    g.addColorStop(0, `rgba(${color},0)`); g.addColorStop(1, `rgba(${color},${strength})`);
+    ctx.save(); ctx.fillStyle = g; ctx.fillRect(0, 0, W, Hh); ctx.restore();
+  };
+
+  // ---------- rendering entry ----------
+  // Renders style into canvas at logical 1280x720 (canvas can be any pixel size; it is scaled).
+  H.W = 1280; H.H = 720;
+  H.loadFonts = async function (style) {
+    const specs = style.fonts || [];
+    try { const sample = 'AaZz09' + (window.FONT_SAMPLE || '');
+      await Promise.all(specs.map((f) => document.fonts.load(f, sample))); await document.fonts.ready; } catch (e) { /* render anyway */ }
+  };
+  H.render = function (style, canvas, t) {
+    const ctx = canvas.getContext('2d', { willReadFrequently: !!style.readsPixels });
+    const sx = canvas.width / H.W, sy = canvas.height / H.H;
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.filter = 'none';
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save(); ctx.scale(sx, sy);
+    style.draw(ctx, H.W, H.H, t == null ? style.frameT || 0 : t);
+    ctx.restore();
+  };
+})();
+
+</script>
+<script>
+// Flat-Vector Science helpers, copied from the first explainer (passive-income-explainer/src/style.js).
+(function () {
+  const TAU = Math.PI * 2;
+  const cl = H.clamp, lerp = H.lerp;
+  const seg = (t, a, b) => cl((t - a) / (b - a));
+  const eo = H.ease.out, eio = H.ease.inOut;
+  // gentle overshoot
+  const back = (u, s = 1.5) => { if (u <= 0) return 0; if (u >= 1) return 1; return 1 + (s + 1) * Math.pow(u - 1, 3) + s * Math.pow(u - 1, 2); };
+  const FONT = '"Nunito", "Fredoka", sans-serif';
+  const F = (w, px) => `${w} ${px}px ${FONT}`;
+
+  const C = {
+    sky0: '#090b2c', sky1: '#18134f', sky2: '#3a1a6c',
+    ink: '#141846',
+    teal: ['#a4fbef', '#3ccbdc', '#1d64b0'],
+    yellow: '#ffd23f', pink: '#ff5d8f', red: '#ff3b5c', green: '#38e08e', cyan: '#56e8ff', violet: '#8b5cff', lav: '#bfb2ff',
+  };
+  const GOLD = ['#fff3b0', '#ffc93f', '#b5620e'];
+  const SKIN = ['#ffe6cc', '#f6ae80', '#a85a3c'];
+  const PINK = ['#ffd0e0', '#ff86b0', '#b23a6e'];
+  const REDB = ['#ff9aa8', '#ff4d6a', '#9c1638'];
+  const MOONP = ['#fff6c8', '#ffd86a', '#c9862a'];
+  const NZ = H.makeNoise(11);
+
+  // ================= TIMELINE (shared with scoreSound) =================
+  const D = 28;
+  const TL = {
+    title: 0.15, shrink: [1.75, 2.35],
+    alarm: 2.45, ring: [2.55, 3.15], wake: 2.62, capOff: [2.9, 3.1], moonOut: [2.85, 3.65], hop: [2.9, 3.6],
+    head2: 3.3, hat: 3.4, clockMove: [3.2, 3.7], arrow2: [3.7, 4.1], hours: [3.75, 5.05], payLbl: 4.45,
+    sweep: [5.55, 6.35],
+    coinIn: [6.15, 6.85], line1: 6.4, strike: [6.95, 7.3], line2: 7.4, yourLbl: 7.8, coinHat: 8.05, babies: 8.4,
+    split: [9.3, 9.85], bloom: 9.8, head4: 9.55, moonIn: [10.9, 11.5], streams: 11.35, incomeLbl: 11.95,
+    rearr: [13.2, 13.9], cal: 13.75, pig: 13.9, month0: 14.05, step: 0.42, travel: 0.5, toC: [16.9, 17.5],
+    head6a: 17.6, axes: [17.75, 18.2], head6b: 18.95, curves: [19.0, 20.9], hit: 20.9, compLbl: 21.1,
+    head7: 21.85, ast: [21.95, 22.6], cone: [22.75, 23.3], noGuar: 23.35,
+    take: [24.6, 25.4], bean8: 25.15, line1T: 25.35, line2T: 25.65, sleep8: 26.5, D,
+  };
+  const HOUR = (i) => TL.hours[0] + ((i + 1) * (TL.hours[1] - TL.hours[0])) / 8; // coin i pops when hour i+1 ends
+  const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN'];
+  const MT = (k) => TL.month0 + k * TL.step;
+  const RENT = 1500, DIV = 300; // assumed: $1,500 rent a month, $300 dividend a quarter
+  const DIVM = [2, 5]; // March and June
+  const V = (yr) => 10000 * Math.pow(1.07, yr); // assumed: $10,000 at 7% a year, reinvested
+  // stream coin spawns in the asset scene: [stream, spawnTime]
+  const STREAM_SP = (() => { const a = []; for (let s = 0; s < 3; s++) for (let ts = 11.75 + s * 0.15; ts < 13.0; ts += 0.45) a.push([s, ts]); return a; })();
+  const STREAM_TRAVEL = 0.7;
+
+  // ================= ref helpers =================
+  function rr(x, X, Y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r);
+    x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath();
+  }
+  function glow(x, cx, cy, r, col, a) {
+    if (a <= 0 || r <= 0) return;
+    const g = x.createRadialGradient(cx, cy, 0, cx, cy, r);
+    g.addColorStop(0, H.rgba(col, a)); g.addColorStop(0.35, H.rgba(col, a * 0.4)); g.addColorStop(1, H.rgba(col, 0));
+    x.fillStyle = g; x.beginPath(); x.arc(cx, cy, r, 0, TAU); x.fill();
+  }
+  function spark(x, cx, cy, r, col, a) {
+    if (a <= 0 || r <= 0) return;
+    x.save(); x.globalAlpha *= a; x.fillStyle = col; x.beginPath();
+    x.moveTo(cx, cy - r); x.quadraticCurveTo(cx, cy, cx + r, cy); x.quadraticCurveTo(cx, cy, cx, cy + r);
+    x.quadraticCurveTo(cx, cy, cx - r, cy); x.quadraticCurveTo(cx, cy, cx, cy - r); x.fill(); x.restore();
+  }
+  function crescent(x, cx, cy, r, dx, dy, fill) {
+    x.save(); x.beginPath(); x.arc(cx, cy, r, 0, TAU); x.clip();
+    x.beginPath(); x.rect(cx - r - 2, cy - r - 2, 2 * r + 4, 2 * r + 4); x.arc(cx + dx, cy + dy, r * 1.02, 0, TAU);
+    x.fillStyle = fill; x.fill('evenodd'); x.restore();
+  }
+  function ball(x, cx, cy, r, col, o = {}) {
+    if (r <= 0.3) return;
+    const la = o.la == null ? -2.25 : o.la, lx = Math.cos(la), ly = Math.sin(la);
+    const g = x.createLinearGradient(cx + lx * r, cy + ly * r, cx - lx * r, cy - ly * r);
+    g.addColorStop(0, col[0]); g.addColorStop(0.45, col[1]); g.addColorStop(1, H.rgba(H.mix(col[1], col[2], 0.6)));
+    x.fillStyle = g; x.beginPath(); x.arc(cx, cy, r, 0, TAU); x.fill();
+    if (o.inner) { x.save(); x.beginPath(); x.arc(cx, cy, r, 0, TAU); x.clip(); o.inner(); x.restore(); }
+    const sh = o.sh == null ? 0.3 : o.sh;
+    crescent(x, cx, cy, r, lx * r * sh, ly * r * sh, H.rgba(col[2], o.sha == null ? 0.5 : o.sha));
+    crescent(x, cx, cy, r, lx * r * sh * 2.2, ly * r * sh * 2.2, H.rgba(col[2], (o.sha == null ? 0.5 : o.sha) * 0.45));
+    crescent(x, cx, cy, r, -lx * r * 0.075, -ly * r * 0.075, H.rgba(o.rim || '#ffffff', o.rima == null ? 0.42 : o.rima));
+  }
+  const bez = (P, u) => { const v = 1 - u; return [v * v * v * P[0][0] + 3 * v * v * u * P[1][0] + 3 * v * u * u * P[2][0] + u * u * u * P[3][0], v * v * v * P[0][1] + 3 * v * v * u * P[1][1] + 3 * v * u * u * P[2][1] + u * u * u * P[3][1]]; };
+  function arrow(x, P, prog, col, lw, o = {}) {
+    if (prog <= 0) return;
+    const n = 48, a = o.a == null ? 1 : o.a;
+    if (a <= 0.01) return;
+    x.save(); x.globalAlpha *= a; x.strokeStyle = col; x.fillStyle = col; x.lineWidth = lw; x.lineCap = 'round'; x.lineJoin = 'round';
+    if (o.dots) x.setLineDash([0.01, lw * 1.9]);
+    x.beginPath(); const p0 = bez(P, o.from || 0); x.moveTo(p0[0], p0[1]);
+    for (let i = 1; i <= n; i++) { const u = (o.from || 0) + ((prog - (o.from || 0)) * i) / n; const p = bez(P, u); x.lineTo(p[0], p[1]); }
+    x.stroke(); x.setLineDash([]);
+    if (o.head !== false && prog > 0.08) {
+      const e = bez(P, prog), e0 = bez(P, prog - 0.02), ang = Math.atan2(e[1] - e0[1], e[0] - e0[0]), hs = lw * 1.5 * cl(prog * 5);
+      x.translate(e[0], e[1]); x.rotate(ang); x.beginPath(); x.moveTo(hs * 1.1, 0); x.lineTo(-hs * 0.8, hs); x.lineTo(-hs * 0.8, -hs); x.closePath();
+      x.lineWidth = lw * 0.7; x.fill(); x.stroke();
+    }
+    x.restore();
+  }
+  function text(x, s, cx, cy, px, col, o = {}) {
+    x.save(); x.font = F(o.w || 900, px); x.textAlign = o.align || 'center'; x.textBaseline = 'middle';
+    x.globalAlpha *= o.a == null ? 1 : o.a;
+    x.fillStyle = o.shadow || 'rgba(10,8,46,0.55)'; x.fillText(s, cx + px * 0.03, cy + px * 0.07);
+    x.fillStyle = col; x.fillText(s, cx, cy); x.restore();
+  }
+  function pill(x, cx, cy, s, px, o = {}) {
+    const sc = o.s == null ? 1 : o.s, a = o.a == null ? 1 : o.a;
+    if (sc <= 0.01 || a <= 0.01) return;
+    x.save(); x.font = F(o.w || 900, px);
+    const tw = x.measureText(s).width, w = tw + px * 1.15, h = px * 1.6;
+    x.translate(cx, cy); x.scale(sc, sc); x.globalAlpha *= a;
+    x.fillStyle = 'rgba(10,8,46,0.4)'; rr(x, -w / 2, -h / 2 + px * 0.2, w, h, h / 2); x.fill();
+    x.fillStyle = o.bg || '#ffffff';
+    if (o.ptr) { x.beginPath(); x.moveTo(-px * 0.35, h / 2 - 2); x.lineTo(0, h / 2 + px * 0.45); x.lineTo(px * 0.35, h / 2 - 2); x.fill(); }
+    rr(x, -w / 2, -h / 2, w, h, h / 2); x.fill();
+    x.fillStyle = 'rgba(255,255,255,0.35)'; rr(x, -w / 2 + h * 0.25, -h / 2 + h * 0.12, w - h * 0.5, h * 0.16, h * 0.08); x.fill();
+    x.fillStyle = o.fg || C.ink; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(s, 0, px * 0.06);
+    x.restore();
+    return w;
+  }
+  // multi-colour word line, centred on (0,0): parts = [[word, colour], ...]
+  function words(x, parts, px) {
+    x.font = F(900, px);
+    const sp = x.measureText(' ').width, ws = parts.map(([w]) => x.measureText(w).width), tot = ws.reduce((a, b) => a + b, 0) + sp * (parts.length - 1);
+    let wx = -tot / 2;
+    parts.forEach(([w, c], i) => { text(x, w, wx + ws[i] / 2, 0, px, c); wx += ws[i] + sp; });
+  }
+  // a headline that pops in at tin and lifts out at tout
+  function headline(x, t, parts, y, px, tin, tout) {
+    const kin = back(seg(t, tin, tin + 0.4), 1.4), kout = tout == null ? 0 : eio(seg(t, tout, tout + 0.3));
+    if (kin <= 0.01 || kout >= 0.99) return;
+    x.save(); x.translate(640, y - kout * 50 + (1 - cl(kin)) * 30); const s = kin * (1 - kout * 0.25); x.scale(s, s); x.globalAlpha *= 1 - kout;
+    words(x, typeof parts === 'string' ? [[parts, '#ffffff']] : parts, px); x.restore();
+  }
+
+  // ---------- sky (ref, plus a dawn mix for the "wake up" beat) ----------
+  let STARS = null;
+  function stars() {
+    if (STARS) return STARS;
+    const r = H.rng(77), a = [], sp = [];
+    for (let i = 0; i < 620; i++) a.push({ x: r.range(0, 1680), y: r.range(0, 1120), d: r.pick([0.15, 0.3, 0.3, 0.55, 1]), s: r.range(0.6, 2.0), ph: r.range(0, TAU), sp: r.range(0.8, 2.6), c: r.pick(['#ffffff', '#cfe4ff', '#ffe9c7', '#dccbff']) });
+    for (let i = 0; i < 16; i++) sp.push({ x: r.range(0, 1680), y: r.range(0, 1120), d: r.range(0.3, 0.9), s: r.range(6, 13), ph: r.range(0, TAU) });
+    STARS = { a, sp }; return STARS;
+  }
+  function sky(x, W, H_, t, cam = {}) {
+    const px = cam.x || 0, py = cam.y || 0, lz = Math.log(cam.z || 1), dn = cam.dawn || 0;
+    const g = x.createLinearGradient(0, 0, W * 0.3, H_);
+    g.addColorStop(0, H.rgba(H.mix(C.sky0, '#2a2378', dn))); g.addColorStop(0.5, H.rgba(H.mix(C.sky1, '#6a3a9a', dn))); g.addColorStop(1, H.rgba(H.mix(C.sky2, '#ff8a6a', dn)));
+    x.fillStyle = g; x.fillRect(0, 0, W, H_);
+    glow(x, W * 0.86, H_ * 0.12, 700, '#7b34c6', 0.34);
+    glow(x, W * 0.05, H_ * 1.0, 620, '#2448b4', 0.4 * (1 - dn * 0.6));
+    glow(x, W * 0.45, H_ * 0.6, 520, '#4a2a9c', 0.16);
+    if (dn > 0) glow(x, W * 0.8, H_ * 1.05, 900, '#ffb36b', 0.55 * dn);
+    const S = stars(), sa = 1 - 0.7 * dn;
+    const place = (s) => {
+      const k = Math.exp(lz * s.d * 0.6);
+      let sx = (((s.x - px * s.d) % 1680) + 1680) % 1680 - 200, sy = (((s.y - py * s.d) % 1120) + 1120) % 1120 - 200;
+      return [(sx - 640) * k + 640, (sy - 360) * k + 360];
+    };
+    for (const s of S.a) {
+      const [sx, sy] = place(s);
+      if (sx < -4 || sx > W + 4 || sy < -4 || sy > H_ + 4) continue;
+      x.globalAlpha = (0.55 + 0.45 * Math.sin(t * s.sp + s.ph)) * (0.45 + s.d * 0.55) * sa;
+      x.fillStyle = s.c; x.beginPath(); x.arc(sx, sy, s.s * (0.7 + 0.35 * s.d), 0, TAU); x.fill();
+    }
+    x.globalAlpha = 1;
+    for (const s of S.sp) {
+      const [sx, sy] = place(s); const tw = 0.6 + 0.4 * Math.sin(t * 1.7 + s.ph);
+      glow(x, sx, sy, s.s * 2.2, '#bfa8ff', 0.25 * tw * sa);
+      spark(x, sx, sy, s.s * tw, '#ffffff', 0.9 * sa);
+    }
+  }
+
+  // ---------- planets (ref) ----------
+  function ring(x, cx, cy, R, half, a = 1) {
+    if (a <= 0) return;
+    x.save(); x.translate(cx, cy); x.rotate(R.tilt); x.globalAlpha *= a;
+    const m = Math.max(...R.bands.map((b) => b[1])) * 1.05;
+    x.beginPath(); if (half === 'back') x.rect(-R.rx * m, -R.ry * m, R.rx * m * 2, R.ry * m); else x.rect(-R.rx * m, 0, R.rx * m * 2, R.ry * m); x.clip();
+    for (const [f0, f1, col, al] of R.bands) {
+      x.beginPath(); x.ellipse(0, 0, R.rx * f1, R.ry * f1, 0, 0, TAU); x.ellipse(0, 0, R.rx * f0, R.ry * f0, 0, 0, TAU);
+      x.fillStyle = H.rgba(col, (al == null ? 1 : al) * (half === 'back' ? 0.75 : 1)); x.fill('evenodd');
+    }
+    x.restore();
+  }
+  function bands(x, r, B, tilt) {
+    x.save(); x.rotate(tilt || 0);
+    for (const [v0, v1, col, a] of B) {
+      x.beginPath();
+      for (let i = 0; i <= 20; i++) { const u = (i / 20) * 2 - 1; x.lineTo(u * r * 1.1, (v0 + 0.13 * (1 - u * u)) * r); }
+      for (let i = 20; i >= 0; i--) { const u = (i / 20) * 2 - 1; x.lineTo(u * r * 1.1, (v1 + 0.13 * (1 - u * u)) * r); }
+      x.fillStyle = H.rgba(col, a == null ? 1 : a); x.fill();
+    }
+    x.restore();
+  }
+  const PL = {
+    magenta: { c: ['#ffa0c4', '#de4b93', '#4e1670'], glow: '#ff5fa8', tilt: -0.18, atmo: [255, 214, 234],
+      bands: [[-0.62, -0.48, '#ffc1d8', 0.55], [-0.2, -0.02, '#b5307e', 0.6], [0.06, 0.14, '#ffd0e2', 0.4], [0.36, 0.58, '#9a2775', 0.55]],
+      ring: { rx: 1.75, ry: 0.5, tilt: -0.2, bands: [[1.18, 1.32, '#ffd27a', 0.95], [1.34, 1.5, '#ff9f5a', 0.9], [1.53, 1.6, '#ffe7b0', 0.8]] } },
+    coral: { c: ['#ffd29a', '#ff7a4a', '#7a1f4f'], glow: '#ff8a50', tilt: 0.1, atmo: [255, 226, 190],
+      bands: [[-0.7, -0.5, '#ffe2b8', 0.5], [-0.32, -0.12, '#e8553a', 0.6], [0.05, 0.22, '#ffb27a', 0.5], [0.4, 0.62, '#c43c46', 0.55]] },
+    teal: { c: ['#9ff3ff', '#3a9be0', '#1d2f86'], glow: '#4fc9ff', tilt: -0.12, atmo: [190, 245, 255],
+      bands: [[-0.5, -0.36, '#c6f8ff', 0.5], [-0.05, 0.1, '#2f74c9', 0.55], [0.32, 0.5, '#7fdcff', 0.4]] },
+    moon: { c: ['#e8e6ff', '#a7a2d8', '#4a3f8c'], craters: true },
+  };
+  function planet(x, cx, cy, r, pal, o = {}) {
+    if (r <= 0.5) return;
+    const ra = o.ringA == null ? 1 : o.ringA;
+    if (pal.glow) glow(x, cx, cy, r * 1.7, pal.glow, o.glowA == null ? 0.32 : o.glowA);
+    const R = pal.ring && { rx: pal.ring.rx * r, ry: pal.ring.ry * r, tilt: pal.ring.tilt, bands: pal.ring.bands };
+    if (R) ring(x, cx, cy, R, 'back', ra);
+    ball(x, cx, cy, r, pal.c, {
+      sh: 0.34, sha: 0.55, rima: 0.35,
+      inner: () => {
+        x.save(); x.translate(cx, cy);
+        if (pal.bands) bands(x, r, pal.bands, pal.tilt);
+        if (pal.craters) { const q = H.rng(5); for (let i = 0; i < 5; i++) { const a = q.range(0, TAU), d = q.range(0.1, 0.65) * r, cr = q.range(0.1, 0.2) * r, qx = Math.cos(a) * d, qy = Math.sin(a) * d; x.fillStyle = 'rgba(80,66,150,0.38)'; x.beginPath(); x.arc(qx, qy, cr, 0, TAU); x.fill(); crescent(x, qx, qy, cr, -cr * 0.3, -cr * 0.3, 'rgba(255,255,255,0.3)'); } }
+        x.restore();
+      },
+    });
+    const atA = o.atmo == null ? 0.7 : o.atmo;
+    if (pal.atmo && atA > 0) {
+      x.save(); x.lineCap = 'round'; const ga0 = x.globalAlpha;
+      const la = -2.25, ag = x.createLinearGradient(cx + Math.cos(la) * r, cy + Math.sin(la) * r, cx - Math.cos(la) * r, cy - Math.sin(la) * r);
+      ag.addColorStop(0, H.rgba(pal.atmo, 1)); ag.addColorStop(0.55, H.rgba(pal.atmo, 0.5)); ag.addColorStop(1, H.rgba(pal.atmo, 0.08));
+      x.strokeStyle = ag;
+      for (const [lw, a] of [[r * 0.05, 0.08], [r * 0.028, 0.16], [r * 0.014, 0.3], [Math.max(2, r * 0.006), 0.6]]) { x.globalAlpha = ga0 * a * atA; x.lineWidth = lw; x.beginPath(); x.arc(cx, cy, r + lw * 0.15, 0, TAU); x.stroke(); }
+      x.restore();
+    }
+    if (R) ring(x, cx, cy, R, 'front', ra);
+  }
+
+  // ---------- print finish (ref): animated grain + static mottling, overlay ----------
+  let GRAIN = null;
+  function grainTex() {
+    if (GRAIN) return GRAIN;
+    const S = 256, tile = H.layer(S, S), tc = tile.getContext('2d'), img = tc.createImageData(S, S), d = img.data, r = H.rng(4242);
+    for (let i = 0; i < d.length; i += 4) { const v = 128 + (r() + r() + r() - 1.5) * 92; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+    tc.putImageData(img, 0, 0);
+    const MW = 320, MH = 180, mot = H.layer(MW, MH), mc = mot.getContext('2d'), mi = mc.createImageData(MW, MH), md = mi.data, nz = H.makeNoise(88);
+    for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const v = 128 + nz.fbm2(x * 0.035, y * 0.035, 4) * 70 + nz.n2(x * 0.22, y * 0.22) * 14, k = (y * MW + x) * 4; md[k] = md[k + 1] = md[k + 2] = v; md[k + 3] = 255; }
+    mc.putImageData(mi, 0, 0);
+    GRAIN = { tile, mot };
+    return GRAIN;
+  }
+  function finish(x, W, H_, t) {
+    const G = grainTex(), f = Math.floor(t * 24);
+    x.save(); x.globalCompositeOperation = 'overlay';
+    x.globalAlpha = 0.12; x.imageSmoothingEnabled = true; x.drawImage(G.mot, 0, 0, W, H_);
+    const pat = x.createPattern(G.tile, 'repeat'); pat.setTransform(new DOMMatrix().translateSelf((f * 73) % 256, (f * 151) % 256));
+    x.globalAlpha = 0.09; x.fillStyle = pat; x.fillRect(0, 0, W, H_);
+    x.restore();
+  }
+
+  // ---------- eyes (ref) ----------
+  function eye(x, ex, ey, er, o) {
+    const look = o.look || [0, 0];
+    if ((o.happy || 0) > 0.5) {
+      x.save(); x.strokeStyle = '#ffffff'; x.lineWidth = er * 0.42; x.lineCap = 'round';
+      if (o.happyCol) x.strokeStyle = o.happyCol;
+      x.beginPath(); x.arc(ex, ey + er * 0.35, er * 0.62, Math.PI * 1.15, Math.PI * 1.85); x.stroke(); x.restore(); return;
+    }
+    const bl = 1 - 0.92 * (o.blink || 0);
+    x.save(); x.translate(ex, ey); x.scale(1, bl);
+    x.fillStyle = '#ffffff'; x.beginPath(); x.arc(0, 0, er, 0, TAU); x.fill();
+    const pr = er * (o.worry ? 0.5 : 0.56);
+    const px = look[0] * er * 0.36, py = look[1] * er * 0.36;
+    x.fillStyle = '#141638'; x.beginPath(); x.arc(px, py, pr, 0, TAU); x.fill();
+    x.fillStyle = '#ffffff'; x.beginPath(); x.arc(px - pr * 0.35, py - pr * 0.4, pr * 0.32, 0, TAU); x.fill();
+    x.beginPath(); x.arc(px + pr * 0.35, py + pr * 0.35, pr * 0.13, 0, TAU); x.fill();
+    x.restore();
+  }
+  const blinkAt = (t, ph) => { const u = (t + ph) % 3.3; return u < 0.14 ? Math.sin((u / 0.14) * Math.PI) : 0; };
+
+  function badge(x, cx, cy, r, kind, s) {
+    if (s <= 0.01) return;
+    x.save(); x.translate(cx, cy); x.scale(s, s);
+    const ok = kind === 'ok';
+    glow(x, 0, 0, r * 2.4, ok ? C.green : C.red, 0.45);
+    ball(x, 0, 0, r, ok ? ['#9fffc8', C.green, '#178a5a'] : ['#ff9aa8', C.red, '#9c1638'], { sha: 0.4 });
+    x.strokeStyle = '#ffffff'; x.fillStyle = '#ffffff'; x.lineWidth = r * 0.26; x.lineCap = 'round'; x.lineJoin = 'round'; x.beginPath();
+    if (ok) { x.moveTo(-r * 0.42, 0); x.lineTo(-r * 0.1, r * 0.32); x.lineTo(r * 0.45, -r * 0.3); x.stroke(); }
+    else if (kind === 'warn') { x.moveTo(0, -r * 0.48); x.lineTo(0, r * 0.12); x.stroke(); x.beginPath(); x.arc(0, r * 0.45, r * 0.15, 0, TAU); x.fill(); }
+    else { x.moveTo(-r * 0.34, -r * 0.34); x.lineTo(r * 0.34, r * 0.34); x.moveTo(r * 0.34, -r * 0.34); x.lineTo(-r * 0.34, r * 0.34); x.stroke(); }
+    x.restore();
+  }
+  function flare(x, cx, cy, k, t) {
+    if (k <= 0) return;
+    glow(x, cx, cy, 420 * (0.6 + 0.4 * k), '#ffcf5a', 0.55 * k);
+    glow(x, cx, cy, 160, '#fff6d0', 0.6 * k);
+    x.save(); x.translate(cx, cy); x.rotate(t * 0.25); x.globalAlpha *= 0.32 * k; x.fillStyle = '#ffe28a';
+    for (let i = 0; i < 12; i++) { x.rotate(TAU / 12); x.beginPath(); x.moveTo(0, -12); x.lineTo(330 + 60 * (i % 2), 0); x.lineTo(0, 12); x.fill(); }
+    x.restore();
+  }
+  function burst(x, cx, cy, age, seed, spread, cols) {
+    if (age < 0 || age > 1.4) return;
+    const r = H.rng(seed);
+    for (let i = 0; i < 18; i++) {
+      const a = r.range(0, TAU), d = (spread || 300) * r.range(0.45, 1) * eo(cl(age / 0.9)), sz = r.range(7, 16) * (1 - cl(age / 1.4));
+      spark(x, cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.8, sz, r.pick(cols || ['#ffffff', '#ffe28a', '#9ff7ff', '#ffb0d0']), 1);
+    }
+  }
+
+  // ================= NEW PROPS (built from the same ball / crescent / glow recipe) =================
+  // hats sit on a round character; drawn in its local space (origin = body centre)
+  function hat(x, r, kind, k, o = {}) {
+    if (k <= 0.01) return;
+    x.save(); x.translate(o.dx || 0, -r * 0.62 + (o.dy || 0)); x.rotate(o.rot || 0); x.scale(k, k);
+    if (kind === 'hard') {
+      const g = x.createLinearGradient(-r * 0.6, -r * 0.7, r * 0.6, 0); g.addColorStop(0, '#fff09a'); g.addColorStop(0.5, '#ffd23f'); g.addColorStop(1, '#e8961c');
+      x.fillStyle = g; x.beginPath(); x.arc(0, 0, r * 0.68, Math.PI, 0); x.closePath(); x.fill();
+      x.save(); x.beginPath(); x.rect(-r, -r, 2 * r, r); x.clip(); crescent(x, 0, 0, r * 0.68, -r * 0.2, -r * 0.22, 'rgba(196,104,18,0.38)'); x.restore();
+      x.fillStyle = '#ffe680'; rr(x, -r * 0.09, -r * 0.7, r * 0.18, r * 0.68, r * 0.09); x.fill();
+      x.fillStyle = '#f0a81f'; rr(x, -r * 0.9, -r * 0.05, r * 1.8, r * 0.17, r * 0.085); x.fill();
+      x.fillStyle = 'rgba(255,255,255,0.4)'; rr(x, -r * 0.7, -r * 0.03, r * 0.8, r * 0.05, r * 0.025); x.fill();
+    } else {
+      const g = x.createLinearGradient(-r * 0.6, -r, r, 0); g.addColorStop(0, '#9fb0ff'); g.addColorStop(0.5, '#5a63e6'); g.addColorStop(1, '#33289a');
+      x.fillStyle = g; x.beginPath(); x.moveTo(-r * 0.72, 0);
+      x.quadraticCurveTo(-r * 0.5, -r * 1.15, r * 0.3, -r * 1.0); x.quadraticCurveTo(r * 0.85, -r * 0.88, r * 1.05, -r * 0.32);
+      x.quadraticCurveTo(r * 0.6, -r * 0.62, r * 0.72, 0); x.closePath(); x.fill();
+      x.fillStyle = 'rgba(255,230,128,0.85)'; for (const [dx, dy] of [[-0.3, -0.45], [0.2, -0.7], [0.3, -0.28]]) { x.beginPath(); x.arc(dx * r, dy * r, r * 0.07, 0, TAU); x.fill(); }
+      x.fillStyle = '#ffffff'; rr(x, -r * 0.8, -r * 0.1, r * 1.6, r * 0.22, r * 0.11); x.fill();
+      ball(x, r * 1.05, -r * 0.3, r * 0.18, ['#ffffff', '#e8e4ff', '#9a8fe0'], { sha: 0.35 });
+    }
+    x.restore();
+  }
+  function zzz(x, cx, cy, t, a, sz, rise = 120) {
+    if (a <= 0.01) return;
+    for (let i = 0; i < 3; i++) {
+      const u = (t * 0.45 + i / 3) % 1, px = sz * (0.75 + 0.55 * u);
+      text(x, 'Z', cx + u * 80 + Math.sin(u * 6) * 8, cy - u * rise, px, '#d6e6ff', { a: a * Math.sin(u * Math.PI) });
+    }
+  }
+  // the round character: one skin-tone ball with a shirt, big eyes, stubby arms and feet
+  function bean(x, cx, cy, r, o = {}) {
+    if (r < 1) return;
+    const t = o.t || 0;
+    x.save(); x.translate(cx, cy); x.rotate(o.rot || 0); const sq = o.sq || 0; x.scale(1 + sq, 1 - sq);
+    if (!o.noFeet) { x.fillStyle = '#2b2f7a'; for (const sd of [-1, 1]) { x.beginPath(); x.ellipse(sd * r * 0.38, r * 0.95, r * 0.26, r * 0.14, 0, 0, TAU); x.fill(); } }
+    for (const sd of [-1, 1]) {
+      const up = (o.armUp || 0) * (sd > 0 ? 1 : 0.7), ang = sd * (0.6 + 0.12 * Math.sin(t * 2.2 + sd)) - sd * up * 1.8;
+      const sx = sd * r * 0.82, sy = r * 0.18, ex = sx + Math.sin(ang) * r * 0.5, ey = sy + Math.cos(ang) * r * 0.5;
+      x.strokeStyle = (o.shirt || ['#45b4ff'])[0]; x.lineWidth = r * 0.2; x.lineCap = 'round'; x.beginPath(); x.moveTo(sx, sy); x.lineTo(ex, ey); x.stroke();
+      ball(x, ex, ey, r * 0.15, o.pal || SKIN, { sha: 0.4 });
+    }
+    ball(x, 0, 0, r, o.pal || SKIN, { sha: 0.42, inner: () => {
+      const sc = o.shirt || ['#45b4ff', '#1d4fae'];
+      const g = x.createLinearGradient(0, r * 0.3, 0, r); g.addColorStop(0, sc[0]); g.addColorStop(1, sc[1]);
+      x.fillStyle = g; x.beginPath(); x.moveTo(-r * 1.1, r * 0.4); x.quadraticCurveTo(0, r * 0.62, r * 1.1, r * 0.4); x.lineTo(r * 1.1, r * 1.1); x.lineTo(-r * 1.1, r * 1.1); x.fill();
+    } });
+    const ey = -r * 0.1, er = r * 0.22;
+    for (const sd of [-1, 1]) {
+      const ex = sd * r * 0.33;
+      if (o.sleep) { x.strokeStyle = '#5a2a3a'; x.lineWidth = er * 0.32; x.lineCap = 'round'; x.beginPath(); x.arc(ex, ey - er * 0.2, er * 0.68, 0.15 * Math.PI, 0.85 * Math.PI); x.stroke(); }
+      else {
+        eye(x, ex, ey, er * (o.shock ? 1.15 : 1), { look: o.look, blink: o.blink, happy: o.happy, happyCol: '#5a2a3a' });
+        if (o.tired && !o.happy) { x.fillStyle = o.lid || '#f2a274'; x.beginPath(); x.arc(ex, ey, er * 1.06, Math.PI, TAU); x.closePath(); x.fill(); x.strokeStyle = '#b8603c'; x.lineWidth = er * 0.18; x.lineCap = 'round'; x.beginPath(); x.moveTo(ex - er, ey); x.lineTo(ex + er, ey); x.stroke(); }
+      }
+    }
+    x.fillStyle = 'rgba(255,110,140,0.45)'; for (const sd of [-1, 1]) { x.beginPath(); x.arc(sd * r * 0.58, r * 0.16, r * 0.12, 0, TAU); x.fill(); }
+    x.save(); x.strokeStyle = '#7a2e2e'; x.fillStyle = '#7a2e2e'; x.lineWidth = r * 0.06; x.lineCap = 'round'; x.beginPath();
+    const my = r * 0.28;
+    if (o.shock) { x.ellipse(0, my, r * 0.09, r * 0.12, 0, 0, TAU); x.fill(); }
+    else if (o.sleep) { x.ellipse(0, my, r * 0.06, r * 0.05, 0, 0, TAU); x.fill(); }
+    else if (o.tired) { x.moveTo(-r * 0.12, my); x.quadraticCurveTo(-r * 0.06, my - r * 0.05, 0, my); x.quadraticCurveTo(r * 0.06, my + r * 0.05, r * 0.12, my); x.stroke(); }
+    else if (o.happy) { x.arc(0, my - r * 0.06, r * 0.14, 0.1 * Math.PI, 0.9 * Math.PI); x.stroke(); }
+    else { x.arc(0, my - r * 0.08, r * 0.1, 0.25 * Math.PI, 0.75 * Math.PI); x.stroke(); }
+    x.restore();
+    if (o.sweat > 0) {
+      const sx = r * 0.8, sy = -r * 0.42 + ((t * 40) % (r * 0.3));
+      x.save(); x.globalAlpha *= cl(o.sweat); x.fillStyle = '#7fe6ff';
+      x.beginPath(); x.moveTo(sx, sy - r * 0.16); x.quadraticCurveTo(sx + r * 0.09, sy, sx, sy + r * 0.06); x.quadraticCurveTo(sx - r * 0.09, sy, sx, sy - r * 0.16); x.fill(); x.restore();
+    }
+    if (o.cap) hat(x, r, 'night', o.cap, { rot: -0.05 });
+    if (o.hard) hat(x, r, 'hard', o.hard, { dy: -(1 - cl(o.hard)) * r * 0.6 });
+    x.restore();
+    if (o.zzz) zzz(x, cx + r * 0.75, cy - r * 0.95, t, o.zzz, Math.max(30, r * 0.5), o.zzzRise);
+  }
+  // gold coin: ball + rim ring + $ (or a face)
+  function coin(x, cx, cy, r, o = {}) {
+    if (r < 0.5) return;
+    const fl = o.flip == null ? 1 : o.flip, t = o.t || 0;
+    x.save(); x.translate(cx, cy); x.rotate(o.rot || 0);
+    if (o.glowA !== 0) glow(x, 0, 0, r * 1.9, '#ffcf5a', o.glowA == null ? 0.3 : o.glowA);
+    if (o.arms) for (const sd of [-1, 1]) {
+      const up = (o.armUp || 0), ang = sd * (0.7 + 0.12 * Math.sin(t * 2.4 + sd)) - sd * up * 2.0;
+      const sx = sd * r * 0.9, sy = r * 0.1, ex = sx + Math.sin(ang) * r * 0.42, ey = sy + Math.cos(ang) * r * 0.42;
+      x.strokeStyle = '#d98d1a'; x.lineWidth = r * 0.12; x.lineCap = 'round'; x.beginPath(); x.moveTo(sx, sy); x.lineTo(ex, ey); x.stroke();
+      ball(x, ex, ey, r * 0.12, GOLD, { sha: 0.4 });
+    }
+    x.save(); x.scale(Math.max(0.06, Math.abs(fl)), 1);
+    ball(x, 0, 0, r, GOLD, { sha: 0.42, inner: () => {
+      x.strokeStyle = 'rgba(190,105,16,0.5)'; x.lineWidth = r * 0.09; x.beginPath(); x.arc(0, 0, r * 0.76, 0, TAU); x.stroke();
+      if (!o.face || fl < 0) { x.font = F(900, r * 1.05); x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = 'rgba(176,96,12,0.78)'; x.fillText('$', 0, r * 0.06); }
+    } });
+    if (o.face && fl > 0) {
+      for (const sd of [-1, 1]) eye(x, sd * r * 0.3, -r * 0.08, r * 0.2, { look: o.look, blink: o.blink, happy: o.happy, happyCol: '#8a4a0a' });
+      x.fillStyle = 'rgba(255,110,90,0.4)'; for (const sd of [-1, 1]) { x.beginPath(); x.arc(sd * r * 0.52, r * 0.18, r * 0.1, 0, TAU); x.fill(); }
+      x.strokeStyle = '#8a4a0a'; x.lineWidth = r * 0.06; x.lineCap = 'round'; x.beginPath(); x.arc(0, r * 0.16, r * 0.14, 0.15 * Math.PI, 0.85 * Math.PI); x.stroke();
+    }
+    x.restore();
+    if (o.hard) hat(x, r, 'hard', o.hard, { dy: -(1 - cl(o.hard)) * r * 0.6 });
+    x.restore();
+  }
+  // crescent moon cradle; returns where a sleeper of radius sr sits
+  function moonSeat(cx, cy, r, sr) { return [cx + r * 0.22, cy - r * 0.55 + r * 0.86 - sr * 0.98]; }
+  function crescentMoon(x, cx, cy, r) {
+    if (r < 1) return;
+    glow(x, cx, cy, r * 2.0, '#ffd86a', 0.22);
+    x.save(); x.beginPath(); x.rect(cx - r * 3, cy - r * 3, r * 6, r * 6); x.arc(cx + r * 0.22, cy - r * 0.55, r * 0.86, 0, TAU); x.clip('evenodd');
+    ball(x, cx, cy, r, MOONP, { sha: 0.42, inner: () => {
+      const q = H.rng(9); for (let i = 0; i < 4; i++) { const a = q.range(1.6, 3.4), d = q.range(0.55, 0.8) * r, cr = q.range(0.08, 0.14) * r, qx = cx + Math.cos(a) * d, qy = cy + Math.sin(a) * d; x.fillStyle = 'rgba(201,134,42,0.35)'; x.beginPath(); x.arc(qx, qy, cr, 0, TAU); x.fill(); }
+    } });
+    x.restore();
+  }
+  function alarmClock(x, cx, cy, r, o = {}) {
+    if (r < 1) return;
+    const ring = o.ring || 0, t = o.t || 0, hm = Math.sin(t * 90) * ring;
+    x.save(); x.translate(cx, cy); x.rotate(Math.sin(t * 62) * 0.12 * ring);
+    if (ring > 0) glow(x, 0, 0, r * 2.4, '#ffd23f', 0.35 * ring);
+    x.strokeStyle = '#7a1f3f'; x.lineWidth = r * 0.12; x.lineCap = 'round';
+    for (const sd of [-1, 1]) { x.beginPath(); x.moveTo(sd * r * 0.5, r * 0.75); x.lineTo(sd * r * 0.72, r * 1.05); x.stroke(); }
+    x.strokeStyle = '#c77a12'; x.lineWidth = r * 0.08; x.beginPath(); x.moveTo(0, -r * 0.9); x.lineTo(0, -r * 1.2); x.stroke();
+    for (const sd of [-1, 1]) ball(x, sd * r * 0.62 + sd * hm * r * 0.03, -r * 0.84, r * 0.34, GOLD, { sha: 0.4 });
+    ball(x, hm * r * 0.28, -r * 1.22, r * 0.1, GOLD);
+    ball(x, 0, 0, r, REDB, { sha: 0.45 });
+    x.fillStyle = '#fffaf0'; x.beginPath(); x.arc(0, 0, r * 0.74, 0, TAU); x.fill();
+    x.fillStyle = C.ink;
+    for (let i = 0; i < 12; i++) { const a = (i / 12) * TAU; x.beginPath(); x.arc(Math.cos(a) * r * 0.6, Math.sin(a) * r * 0.6, r * (i % 3 ? 0.035 : 0.06), 0, TAU); x.fill(); }
+    const h = o.h == null ? 7 : o.h, ha = ((h % 12) / 12) * TAU - Math.PI / 2, ma = (h % 1) * TAU - Math.PI / 2;
+    x.strokeStyle = C.ink; x.lineCap = 'round';
+    x.lineWidth = r * 0.11; x.beginPath(); x.moveTo(0, 0); x.lineTo(Math.cos(ha) * r * 0.36, Math.sin(ha) * r * 0.36); x.stroke();
+    x.lineWidth = r * 0.07; x.beginPath(); x.moveTo(0, 0); x.lineTo(Math.cos(ma) * r * 0.54, Math.sin(ma) * r * 0.54); x.stroke();
+    x.fillStyle = C.red; x.beginPath(); x.arc(0, 0, r * 0.08, 0, TAU); x.fill();
+    x.restore();
+  }
+  function house(x, bx, by, w) {
+    const h = w * 0.6, x0 = bx - w / 2, y0 = by - h;
+    x.fillStyle = '#b8384a'; rr(x, bx + w * 0.2, y0 - h * 0.62, w * 0.13, h * 0.55, w * 0.02); x.fill();
+    const g = x.createLinearGradient(x0, y0, x0 + w, by); g.addColorStop(0, '#fff4e4'); g.addColorStop(1, '#f2c9a2');
+    x.fillStyle = g; rr(x, x0, y0, w, h, w * 0.04); x.fill();
+    x.fillStyle = 'rgba(176,96,72,0.22)'; rr(x, bx + w * 0.2, y0, w * 0.3, h, w * 0.04); x.fill();
+    const rg = x.createLinearGradient(x0, y0 - h * 0.7, x0 + w, y0); rg.addColorStop(0, '#ff9a72'); rg.addColorStop(1, '#cf3a4e');
+    x.fillStyle = rg; x.strokeStyle = rg; x.lineJoin = 'round'; x.lineWidth = w * 0.07;
+    x.beginPath(); x.moveTo(x0 - w * 0.08, y0 + w * 0.02); x.lineTo(bx, y0 - h * 0.72); x.lineTo(x0 + w * 1.08, y0 + w * 0.02); x.closePath(); x.fill(); x.stroke();
+    x.strokeStyle = 'rgba(255,220,200,0.6)'; x.lineWidth = w * 0.025; x.lineCap = 'round'; x.beginPath(); x.moveTo(x0 + w * 0.02, y0 - h * 0.02); x.lineTo(bx - w * 0.05, y0 - h * 0.6); x.stroke();
+    x.fillStyle = '#2f5fc0'; rr(x, bx - w * 0.09, by - h * 0.56, w * 0.18, h * 0.56, w * 0.06); x.fill();
+    x.fillStyle = C.yellow; x.beginPath(); x.arc(bx + w * 0.05, by - h * 0.26, w * 0.02, 0, TAU); x.fill();
+    for (const sd of [-1, 1]) {
+      const ws = w * 0.2, wx = bx + sd * w * 0.3 - ws / 2, wy = y0 + h * 0.2;
+      glow(x, wx + ws / 2, wy + ws / 2, ws * 1.4, '#ffd86a', 0.45);
+      x.fillStyle = '#ffe680'; rr(x, wx, wy, ws, ws, ws * 0.18); x.fill();
+      x.strokeStyle = 'rgba(190,120,40,0.7)'; x.lineWidth = w * 0.022; x.beginPath(); x.moveTo(wx + ws / 2, wy); x.lineTo(wx + ws / 2, wy + ws); x.moveTo(wx, wy + ws / 2); x.lineTo(wx + ws, wy + ws / 2); x.stroke();
+    }
+  }
+  function shop(x, bx, by, w) {
+    const h = w * 0.62, x0 = bx - w / 2, y0 = by - h;
+    const g = x.createLinearGradient(x0, y0, x0 + w, by); g.addColorStop(0, '#f2f6ff'); g.addColorStop(1, '#b7c3f2');
+    x.fillStyle = g; rr(x, x0, y0, w, h, w * 0.04); x.fill();
+    x.fillStyle = '#5a63e6'; rr(x, x0 - w * 0.04, y0 - h * 0.3, w * 1.08, h * 0.32, w * 0.05); x.fill();
+    ball(x, bx, y0 - h * 0.14, h * 0.11, GOLD, { sha: 0.4 });
+    const n = 6, aw = (w * 1.08) / n, ay = y0 + h * 0.02, ah = h * 0.16;
+    for (let i = 0; i < n; i++) {
+      x.fillStyle = i % 2 ? '#ffffff' : C.pink; const ax = x0 - w * 0.04 + i * aw;
+      x.fillRect(ax, ay, aw + 0.5, ah); x.beginPath(); x.arc(ax + aw / 2, ay + ah, aw / 2, 0, Math.PI); x.fill();
+    }
+    x.fillStyle = '#2a3a9c'; rr(x, x0 + w * 0.1, y0 + h * 0.44, w * 0.44, h * 0.4, w * 0.04); x.fill();
+    glow(x, x0 + w * 0.32, y0 + h * 0.64, w * 0.3, '#ffd86a', 0.4);
+    x.strokeStyle = 'rgba(255,255,255,0.45)'; x.lineWidth = w * 0.03; x.lineCap = 'round'; x.beginPath(); x.moveTo(x0 + w * 0.16, y0 + h * 0.74); x.lineTo(x0 + w * 0.3, y0 + h * 0.52); x.stroke();
+    x.fillStyle = '#ff8d3f'; rr(x, bx + w * 0.14, y0 + h * 0.4, w * 0.24, h * 0.6, w * 0.05); x.fill();
+  }
+  function bars(x, bx, by, w) {
+    const bw = w * 0.22, gap = w * 0.08, hs = [0.35, 0.62, 0.95], x0 = bx - (3 * bw + 2 * gap) / 2;
+    hs.forEach((hh, i) => {
+      const h = w * hh, X = x0 + i * (bw + gap);
+      const g = x.createLinearGradient(0, by - h, 0, by); g.addColorStop(0, '#b6ffd6'); g.addColorStop(0.5, C.green); g.addColorStop(1, '#178a5a');
+      x.fillStyle = 'rgba(10,8,46,0.35)'; rr(x, X + w * 0.025, by - h + w * 0.03, bw, h, bw * 0.3); x.fill();
+      x.fillStyle = g; rr(x, X, by - h, bw, h, bw * 0.3); x.fill();
+    });
+    const P = [[x0 - w * 0.06, by - w * 0.42], [x0 + bw * 1.2, by - w * 0.72], [x0 + bw * 2 + gap, by - w * 0.6], [x0 + 3 * bw + 2 * gap + w * 0.06, by - w * 1.08]];
+    x.save(); x.strokeStyle = '#ffffff'; x.fillStyle = '#ffffff'; x.lineWidth = w * 0.07; x.lineCap = 'round'; x.lineJoin = 'round';
+    x.beginPath(); P.forEach(([px, py], i) => (i ? x.lineTo(px, py) : x.moveTo(px, py))); x.stroke();
+    const [ex, ey] = P[3], ang = Math.atan2(ey - P[2][1], ex - P[2][0]), hs2 = w * 0.13;
+    x.translate(ex, ey); x.rotate(ang); x.beginPath(); x.moveTo(hs2 * 1.1, 0); x.lineTo(-hs2 * 0.7, hs2); x.lineTo(-hs2 * 0.7, -hs2); x.closePath(); x.fill();
+    x.restore();
+  }
+  const ASSET = { estate: { pal: PL.coral, prop: house, w: 1.0 }, stocks: { pal: PL.teal, prop: bars, w: 0.95 }, business: { pal: PL.magenta, prop: shop, w: 1.0 } };
+  function assetPlanet(x, cx, cy, r, kind, o = {}) {
+    if (r < 1) return;
+    const A = ASSET[kind];
+    x.save(); x.globalAlpha *= o.a == null ? 1 : o.a;
+    planet(x, cx, cy, r, A.pal, { glowA: o.glowA == null ? 0.3 : o.glowA });
+    A.prop(x, cx, cy - r * 0.84, r * A.w);
+    x.restore();
+  }
+  function piggy(x, cx, cy, r, o = {}) {
+    if (r < 1) return;
+    const sq = o.gulp || 0;
+    x.save(); x.translate(cx, cy); x.scale(1 + sq * 0.1, 1 - sq * 0.1);
+    glow(x, 0, 0, r * 2, '#ff86b0', 0.25);
+    x.fillStyle = '#c9447e'; for (const lx of [-0.55, -0.2, 0.25, 0.6]) { rr(x, lx * r - r * 0.12, r * 0.6, r * 0.24, r * 0.42, r * 0.1); x.fill(); }
+    x.strokeStyle = '#e0558f'; x.lineWidth = r * 0.08; x.lineCap = 'round'; x.beginPath(); x.moveTo(-r * 1.1, -r * 0.05);
+    x.bezierCurveTo(-r * 1.4, -r * 0.3, -r * 1.45, r * 0.1, -r * 1.25, -r * 0.05); x.stroke();
+    x.save(); x.scale(1.18, 1); ball(x, 0, 0, r, PINK, { sha: 0.42 }); x.restore();
+    x.fillStyle = '#ff6fa0'; x.beginPath(); x.moveTo(r * 0.2, -r * 0.78); x.lineTo(r * 0.45, -r * 1.15); x.lineTo(r * 0.62, -r * 0.66); x.closePath(); x.fill();
+    x.fillStyle = '#7a1f4f'; rr(x, -r * 0.35, -r * 0.93, r * 0.5, r * 0.13, r * 0.065); x.fill();
+    x.fillStyle = '#ffa6c6'; x.beginPath(); x.ellipse(r * 1.14, r * 0.06, r * 0.2, r * 0.26, 0, 0, TAU); x.fill();
+    x.fillStyle = '#b23a6e'; for (const dy of [-0.08, 0.18]) { x.beginPath(); x.ellipse(r * 1.17, r * dy, r * 0.05, r * 0.06, 0, 0, TAU); x.fill(); }
+    eye(x, r * 0.62, -r * 0.24, r * 0.16, { blink: o.blink, look: [0.4, 0], happy: o.happy, happyCol: '#7a1f4f' });
+    x.fillStyle = 'rgba(255,90,140,0.5)'; x.beginPath(); x.arc(r * 0.72, r * 0.18, r * 0.1, 0, TAU); x.fill();
+    x.restore();
+  }
+  function calendar(x, cx, cy, s, label, flip, a, fs = 0.36) {
+    if (s < 1 || a <= 0.01) return;
+    const w = s, h = s * 1.05;
+    x.save(); x.translate(cx, cy); x.globalAlpha *= a;
+    x.fillStyle = 'rgba(10,8,46,0.4)'; rr(x, -w / 2 + 4, -h / 2 + 8, w, h, w * 0.14); x.fill();
+    x.save(); rr(x, -w / 2, -h / 2, w, h, w * 0.14); x.clip();
+    x.fillStyle = '#ffffff'; x.fillRect(-w / 2, -h / 2, w, h);
+    x.fillStyle = C.red; x.fillRect(-w / 2, -h / 2, w, h * 0.3);
+    x.fillStyle = 'rgba(255,255,255,0.3)'; x.fillRect(-w / 2, -h / 2 + h * 0.05, w, h * 0.05);
+    x.restore();
+    x.fillStyle = '#5a1f3f'; for (const sd of [-1, 1]) { rr(x, sd * w * 0.24 - w * 0.05, -h / 2 - h * 0.08, w * 0.1, h * 0.2, w * 0.05); x.fill(); }
+    x.save(); x.translate(0, h * 0.15); x.scale(1, Math.max(0.05, flip)); text(x, label, 0, 0, s * fs, C.ink, { shadow: 'rgba(0,0,0,0)' }); x.restore();
+    x.restore();
+  }
+  function asteroid(x, cx, cy, r, dx, dy) {
+    for (let i = 6; i >= 1; i--) glow(x, cx - dx * i * r * 0.8, cy - dy * i * r * 0.8, r * (1.9 - i * 0.18), i < 3 ? '#ffb04a' : '#ff3b5c', 0.4);
+    glow(x, cx, cy, r * 2.4, '#ff6a3d', 0.5);
+    ball(x, cx, cy, r, ['#ead2c2', '#a07c74', '#46283c'], { sha: 0.5, inner: () => {
+      const q = H.rng(21); for (let i = 0; i < 4; i++) { const a = q.range(0, TAU), d = q.range(0.1, 0.6) * r, cr = q.range(0.14, 0.24) * r; x.fillStyle = 'rgba(70,40,60,0.4)'; x.beginPath(); x.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, cr, 0, TAU); x.fill(); }
+    } });
+  }
+  // dotted circular "reinvest" loop with an arrowhead
+  function loopArrow(x, cx, cy, R, a0, a1, col, lw, alpha) {
+    if (alpha <= 0.01) return;
+    x.save(); x.globalAlpha *= alpha; x.strokeStyle = col; x.fillStyle = col; x.lineWidth = lw; x.lineCap = 'round';
+    x.setLineDash([0.01, lw * 1.9]); x.beginPath(); x.arc(cx, cy, R, a0, a1); x.stroke(); x.setLineDash([]);
+    const hx = cx + Math.cos(a1) * R, hy = cy + Math.sin(a1) * R;
+    x.translate(hx, hy); x.rotate(a1 + Math.PI / 2); const hs = lw * 1.5; x.beginPath(); x.moveTo(hs * 1.1, 0); x.lineTo(-hs * 0.8, hs); x.lineTo(-hs * 0.8, -hs); x.closePath(); x.fill();
+    x.restore();
+  }
+
+  function header(x, a) { pill(x, 206, 44, 'Money while you sleep', 28, { a, bg: 'rgba(255,255,255,0.95)' }); }
+
+
+  // ================= 9:16 SHORT: "You're paid for how replaceable you are" =================
+  // Continues the closure opened in base.js. Logical canvas is 1080 x 1920; times come from the voice track (words.json).
+  const PW = 1080, PH = 1920, DUR = 68.4;
+  const GREY = ['#ecebff', '#aaa6d6', '#4a3f8c'], GREY_SHIRT = ['#8f89c6', '#4e4886'];
+  const GOLD_SHIRT = ['#ffd23f', '#d98d1a'];
+  const RUBY = ['#ffb0c4', '#ff3b5c', '#8c1238'];
+  const COL = { g: C.yellow, r: '#ff5470', c: C.cyan, p: '#ff8fc8', n: C.green, w: '#ffffff' };
+
+  // ---------- portrait sky (same recipe as sky(), re-laid for 9:16) ----------
+  let STARS2 = null;
+  function stars2() {
+    if (STARS2) return STARS2;
+    const r = H.rng(78), a = [], sp = [];
+    for (let i = 0; i < 900; i++) a.push({ x: r.range(0, 1400), y: r.range(0, 2240), d: r.pick([0.15, 0.3, 0.3, 0.55, 1]), s: r.range(0.9, 2.8), ph: r.range(0, TAU), sp: r.range(0.8, 2.6), c: r.pick(['#ffffff', '#cfe4ff', '#ffe9c7', '#dccbff']) });
+    for (let i = 0; i < 22; i++) sp.push({ x: r.range(0, 1400), y: r.range(0, 2240), d: r.range(0.3, 0.9), s: r.range(9, 18), ph: r.range(0, TAU) });
+    STARS2 = { a, sp }; return STARS2;
+  }
+  function skyP(x, t, cam = {}) {
+    const px = cam.x || 0, py = cam.y || 0, lz = Math.log(cam.z || 1), red = cam.red || 0;
+    const g = x.createLinearGradient(0, 0, PW * 0.4, PH);
+    g.addColorStop(0, H.rgba(H.mix(C.sky0, '#2a0a24', red))); g.addColorStop(0.5, H.rgba(H.mix(C.sky1, '#4a1030', red))); g.addColorStop(1, H.rgba(H.mix(C.sky2, '#7a1a3c', red)));
+    x.fillStyle = g; x.fillRect(0, 0, PW, PH);
+    glow(x, PW * 0.95, PH * 0.08, 950, '#7b34c6', 0.34);
+    glow(x, 0, PH, 900, '#2448b4', 0.4);
+    glow(x, PW * 0.5, PH * 0.58, 760, '#4a2a9c', 0.18);
+    const S = stars2();
+    const place = (s) => {
+      const k = Math.exp(lz * s.d * 0.6);
+      const sx = (((s.x - px * s.d) % 1400) + 1400) % 1400 - 160, sy = (((s.y - py * s.d) % 2240) + 2240) % 2240 - 160;
+      return [(sx - 540) * k + 540, (sy - 960) * k + 960];
+    };
+    for (const s of S.a) {
+      const [sx, sy] = place(s);
+      if (sx < -4 || sx > PW + 4 || sy < -4 || sy > PH + 4) continue;
+      x.globalAlpha = (0.55 + 0.45 * Math.sin(t * s.sp + s.ph)) * (0.45 + s.d * 0.55);
+      x.fillStyle = s.c; x.beginPath(); x.arc(sx, sy, s.s * (0.7 + 0.35 * s.d), 0, TAU); x.fill();
+    }
+    x.globalAlpha = 1;
+    for (const s of S.sp) {
+      const [sx, sy] = place(s); const tw = 0.6 + 0.4 * Math.sin(t * 1.7 + s.ph);
+      glow(x, sx, sy, s.s * 2.2, '#bfa8ff', 0.25 * tw);
+      spark(x, sx, sy, s.s * tw, '#ffffff', 0.9);
+    }
+  }
+
+  // ---------- camera: keyframed framings with fast eased moves, punch-ins and shake ----------
+  // K = [[tStart, cx, cy, z, dur], ...]: from tStart the camera eases to (cx, cy, z) over dur seconds
+  function camAt(t, K) {
+    let c = [K[0][1], K[0][2], K[0][3]];
+    for (let i = 1; i < K.length; i++) {
+      const [ts, cx, cy, z, d] = K[i]; if (t < ts) break;
+      const u = eio(seg(t, ts, ts + d));
+      c = [lerp(c[0], cx, u), lerp(c[1], cy, u), Math.exp(lerp(Math.log(c[2]), Math.log(z), u))];
+    }
+    return c;
+  }
+  const punchK = (t, times, amt = 0.06) => { let k = 0; for (const tk of times) { if (t < tk) continue; const u = t - tk; k = Math.max(k, u < 0.07 ? u / 0.07 : Math.exp(-(u - 0.07) * 7)); } return 1 + amt * k; };
+  const shakeK = (t, times, amp = 16) => { let sx = 0, sy = 0; for (const tk of times) { const u = t - tk; if (u < 0 || u > 0.5) continue; const e = amp * Math.exp(-u * 9); sx += Math.sin(u * 71) * e; sy += Math.cos(u * 53) * e * 0.7; } return [sx, sy]; };
+  function camApply(x, t, c, o = {}) {
+    const [sx, sy] = o.shake || [0, 0], drift = 1 + 0.012 * Math.sin(t * 0.9);
+    const z = c[2] * (o.punch || 1) * drift;
+    x.translate(PW / 2 + sx + (o.dx || 0), PH / 2 + sy + (o.dy || 0)); x.rotate(o.rot || 0); x.scale(z, z); x.translate(-c[0], -c[1]);
+  }
+
+  // ---------- headlines (screen space): words pop in on the exact spoken word ----------
+  // line syntax: "WORD@time#colour*scale WORD@time ..." ; lines split by "|"
+  function parseHL(s) {
+    return s.split('|').map((ln) => ln.trim().split(/\s+/).map((tok) => {
+      const m = /^(.+?)@(-?[\d.]+)(?:#(\w))?(?:\*([\d.]+))?$/.exec(tok);
+      return { w: m[1], t: +m[2], col: COL[m[3] || 'w'], sc: m[4] ? +m[4] : 1, key: !!m[3] };
+    }));
+  }
+  const HL = [];
+  const hl = (t0, t1, y, px, s) => HL.push({ t0, t1, y, px, lines: parseHL(s) });
+  function capText(x, s, cx, cy, px, col, a) {
+    x.save(); x.globalAlpha *= a; x.font = F(900, px); x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineJoin = 'round';
+    x.fillStyle = 'rgba(10,8,46,0.6)'; x.fillText(s, cx + px * 0.04, cy + px * 0.1);
+    x.strokeStyle = '#0d0b33'; x.lineWidth = px * 0.17; x.strokeText(s, cx, cy);
+    x.fillStyle = col; x.fillText(s, cx, cy); x.restore();
+  }
+  function drawHL(x, t) {
+    for (const h of HL) {
+      if (t < h.t0 - 0.4 || t > h.t1 + 0.25) continue;
+      const out = eio(seg(t, h.t1, h.t1 + 0.18));
+      const n = h.lines.length, lh = h.px * 1.14;
+      h.lines.forEach((ln, li) => {
+        x.font = F(900, h.px);
+        const sp = x.measureText(' ').width * 1.15;
+        const ws = ln.map((p) => { x.font = F(900, h.px * p.sc); return x.measureText(p.w).width + h.px * p.sc * 0.05; });
+        const tot = ws.reduce((a, b) => a + b, 0) + sp * (ln.length - 1), fit = Math.min(1, 900 / tot);
+        const ly = h.y + (li - (n - 1) / 2) * lh * (ln.some((p) => p.sc > 1.1) ? 1.08 : 1);
+        let wx = 540 - (tot * fit) / 2;
+        ln.forEach((p, i) => {
+          const k = back(seg(t, p.t - 0.04, p.t + 0.2), 2.4);
+          const cx = wx + (ws[i] * fit) / 2; wx += (ws[i] + sp) * fit;
+          if (k <= 0.01) return;
+          const wig = p.key ? 1 + 0.035 * Math.sin(seg(t, p.t, p.t + 0.5) * Math.PI) : 1;
+          x.save(); x.translate(cx, ly + (1 - cl(k)) * 26 - out * 30); x.scale(k * wig * (1 - out * 0.3), k * wig * (1 - out * 0.3));
+          if (p.key && t > p.t) glow(x, 0, 0, h.px * p.sc * 1.3, p.col, 0.22 * (1 - out));
+          capText(x, p.w, 0, 0, h.px * p.sc * fit, p.col, 1 - out);
+          x.restore();
+        });
+      });
+    }
+  }
+
+  // ---------- new props ----------
+  function gem(x, cx, cy, r, o = {}) {
+    if (r < 1) return;
+    const t = o.t || 0;
+    glow(x, cx, cy, r * 2.6, '#56e8ff', (o.glowA == null ? 0.45 : o.glowA) * (0.85 + 0.15 * Math.sin(t * 3)));
+    x.save(); x.translate(cx, cy); x.rotate(o.rot || 0);
+    const T = [[-0.48, -0.62], [0.48, -0.62]], G = [[-1, -0.18], [1, -0.18]], B = [0, 1.0];
+    const P = (p) => [p[0] * r, p[1] * r];
+    const poly = (pts, col) => { x.fillStyle = col; x.beginPath(); pts.map(P).forEach(([a, b], i) => (i ? x.lineTo(a, b) : x.moveTo(a, b))); x.closePath(); x.fill(); };
+    x.fillStyle = 'rgba(10,8,46,0.35)'; x.save(); x.translate(r * 0.06, r * 0.1); poly([T[0], T[1], G[1], B, G[0]], 'rgba(10,8,46,0.35)'); x.restore();
+    poly([G[0], T[0], [-0.16, -0.18]], '#bdfcff');
+    poly([T[0], T[1], [0.16, -0.18], [-0.16, -0.18]], '#8af3ff');
+    poly([T[1], G[1], [0.16, -0.18]], '#3ccbdc');
+    poly([G[0], [-0.16, -0.18], B], '#5fe0f0');
+    poly([[-0.16, -0.18], [0.16, -0.18], B], '#2fa8d6');
+    poly([[0.16, -0.18], G[1], B], '#1d64b0');
+    x.strokeStyle = 'rgba(255,255,255,0.55)'; x.lineWidth = r * 0.04; x.lineCap = 'round'; x.beginPath(); x.moveTo(-0.38 * r, -0.52 * r); x.lineTo(-0.1 * r, -0.52 * r); x.stroke();
+    x.restore();
+    spark(x, cx - r * 0.35, cy - r * 0.45, r * 0.22 * (0.6 + 0.4 * Math.sin(t * 5)), '#ffffff', 0.95);
+    spark(x, cx + r * 0.55, cy - r * 0.05, r * 0.14 * (0.6 + 0.4 * Math.sin(t * 4 + 2)), '#ffffff', 0.85);
+  }
+  function building(x, cx, by, w, h, o = {}) {
+    const t = o.t || 0, sh = o.shake || 0, x0 = cx - w / 2 + Math.sin(t * 60) * 8 * sh, y0 = by - h;
+    if (o.alarm > 0) glow(x, cx, y0 + h * 0.4, w * 1.6, C.red, 0.45 * o.alarm * (0.6 + 0.4 * Math.sin(t * 14)));
+    glow(x, cx, y0 + h * 0.5, w * 1.2, '#7a8cff', 0.25);
+    const g = x.createLinearGradient(x0, y0, x0 + w, by); g.addColorStop(0, '#b9c6ff'); g.addColorStop(0.5, '#7d86e8'); g.addColorStop(1, '#3d3a9c');
+    x.fillStyle = 'rgba(10,8,46,0.4)'; rr(x, x0 + 12, y0 + 16, w, h, w * 0.06); x.fill();
+    x.fillStyle = g; rr(x, x0, y0, w, h, w * 0.06); x.fill();
+    x.fillStyle = 'rgba(30,24,110,0.35)'; rr(x, x0 + w * 0.62, y0, w * 0.38, h, w * 0.06); x.fill();
+    x.fillStyle = 'rgba(255,255,255,0.35)'; rr(x, x0 + w * 0.06, y0 + h * 0.02, w * 0.05, h * 0.9, w * 0.025); x.fill();
+    const cols = 4, rows = 6, ww = w * 0.13, wh = h * 0.08;
+    for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) {
+      const wx = x0 + w * 0.14 + i * w * 0.2, wy = y0 + h * 0.2 + j * h * 0.115, lit = (i * 7 + j * 3) % 5 !== 0;
+      x.fillStyle = lit ? (o.alarm > 0.3 ? '#ff9aa8' : '#ffe680') : '#3a3290'; rr(x, wx, wy, ww, wh, ww * 0.2); x.fill();
+    }
+    x.fillStyle = '#ff5d8f'; rr(x, x0 + w * 0.18, y0 - h * 0.1, w * 0.64, h * 0.11, h * 0.04); x.fill();
+    x.font = F(900, h * 0.065); x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = '#ffffff'; x.fillText('COMPANY', x0 + w / 2, y0 - h * 0.045);
+    x.fillStyle = '#2f5fc0'; rr(x, x0 + w * 0.4, by - h * 0.12, w * 0.2, h * 0.12, w * 0.04); x.fill();
+    if (o.crack > 0) {
+      const P = [[0.5, 0.0], [0.42, 0.14], [0.56, 0.26], [0.44, 0.4], [0.6, 0.55], [0.47, 0.7], [0.55, 0.86]];
+      const n = Math.max(2, Math.ceil(P.length * o.crack));
+      x.strokeStyle = '#140f3a'; x.lineWidth = w * 0.035; x.lineJoin = 'round'; x.lineCap = 'round'; x.beginPath();
+      P.slice(0, n).forEach(([a, b], i) => (i ? x.lineTo(x0 + a * w, y0 + b * h) : x.moveTo(x0 + a * w, y0 + b * h))); x.stroke();
+    }
+    if (o.alarm > 0) { const on = Math.sin(t * 14) > 0; glow(x, cx, y0 - h * 0.16, 90, C.red, on ? 0.8 * o.alarm : 0.2); ball(x, cx, y0 - h * 0.15, 22, RUBY); }
+  }
+  function clipboard(x, cx, cy, w, prog) {
+    const h = w * 1.3;
+    x.save(); x.translate(cx, cy); x.rotate(-0.06);
+    x.fillStyle = 'rgba(10,8,46,0.4)'; rr(x, -w / 2 + 10, -h / 2 + 14, w, h, w * 0.1); x.fill();
+    x.fillStyle = '#8b5cff'; rr(x, -w / 2, -h / 2, w, h, w * 0.1); x.fill();
+    x.fillStyle = '#ffffff'; rr(x, -w / 2 + w * 0.08, -h / 2 + w * 0.12, w * 0.84, h - w * 0.2, w * 0.05); x.fill();
+    ball(x, 0, -h / 2 + w * 0.04, w * 0.12, GOLD, { sha: 0.4 });
+    for (let i = 0; i < 3; i++) {
+      const ly = -h / 2 + w * 0.42 + i * w * 0.3, bx = -w * 0.32;
+      x.strokeStyle = '#c9c4ee'; x.lineWidth = w * 0.035; x.strokeRect(bx - w * 0.07, ly - w * 0.07, w * 0.14, w * 0.14);
+      x.fillStyle = '#d9d5f5'; rr(x, -w * 0.15, ly - w * 0.03, w * 0.48, w * 0.06, w * 0.03); x.fill();
+      const k = cl(prog * 3 - i);
+      if (k > 0) { x.strokeStyle = C.green; x.lineWidth = w * 0.05; x.lineCap = 'round'; x.lineJoin = 'round'; x.beginPath(); x.moveTo(bx - w * 0.06, ly); x.lineTo(bx - w * 0.06 + w * 0.05 * cl(k * 2), ly + w * 0.05 * cl(k * 2)); if (k > 0.5) x.lineTo(bx - w * 0.01 + w * 0.11 * cl(k * 2 - 1), ly + w * 0.05 - w * 0.13 * cl(k * 2 - 1)); x.stroke(); }
+    }
+    x.restore();
+  }
+  function priceTag(x, cx, cy, label, s, o = {}) {
+    if (s <= 0.01) return;
+    x.save(); x.translate(cx, cy); x.rotate(o.rot || 0); x.scale(s, s);
+    x.font = F(900, 46); const w = Math.max(110, x.measureText(label).width + 70), h = 76;
+    if (o.hot) glow(x, 0, 0, w, o.hot, 0.55);
+    x.strokeStyle = '#d6cdff'; x.lineWidth = 4; x.beginPath(); x.moveTo(-w / 2 + 22, 0); x.quadraticCurveTo(-w / 2 - 10, -50, -w / 2 + 10, -80); x.stroke();
+    x.fillStyle = 'rgba(10,8,46,0.4)'; rr(x, -w / 2 + 6, -h / 2 + 8, w, h, 16); x.fill();
+    x.fillStyle = o.bg || '#ffffff'; x.beginPath(); x.moveTo(-w / 2, 0); x.lineTo(-w / 2 + 26, -h / 2); x.lineTo(w / 2 - 14, -h / 2); x.arcTo(w / 2, -h / 2, w / 2, h / 2, 14); x.arcTo(w / 2, h / 2, -w / 2, h / 2, 14); x.lineTo(-w / 2 + 26, h / 2); x.closePath(); x.fill();
+    x.fillStyle = '#2a2470'; x.beginPath(); x.arc(-w / 2 + 24, 0, 7, 0, TAU); x.fill();
+    x.fillStyle = o.fg || C.ink; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(label, 12, 3);
+    x.restore();
+  }
+  function gauge(x, cx, cy, w, frac, label, col, a = 1) {
+    if (a <= 0.01) return;
+    const h = 64;
+    x.save(); x.globalAlpha *= a;
+    text(x, label, cx, cy - 74, 48, '#e6e0ff');
+    x.fillStyle = 'rgba(10,8,46,0.45)'; rr(x, cx - w / 2 + 6, cy - h / 2 + 10, w, h, h / 2); x.fill();
+    x.fillStyle = '#2a2470'; rr(x, cx - w / 2, cy - h / 2, w, h, h / 2); x.fill();
+    const fw = Math.max(h, w * cl(frac, 0, 1.2));
+    const g = x.createLinearGradient(cx - w / 2, 0, cx - w / 2 + fw, 0); g.addColorStop(0, H.rgba(H.mix(col, '#ffffff', 0.35))); g.addColorStop(1, col);
+    x.fillStyle = g; rr(x, cx - w / 2, cy - h / 2, fw, h, h / 2); x.fill();
+    x.fillStyle = 'rgba(255,255,255,0.35)'; rr(x, cx - w / 2 + 18, cy - h / 2 + 10, Math.max(0, fw - 36), 12, 6); x.fill();
+    if (frac > 1) glow(x, cx - w / 2 + fw, cy, 120, col, 0.6);
+    x.restore();
+  }
+  function icon(x, kind, cx, cy, s) {
+    x.save(); x.translate(cx, cy); x.strokeStyle = '#ffffff'; x.fillStyle = '#ffffff'; x.lineCap = 'round'; x.lineJoin = 'round'; x.lineWidth = s * 0.12;
+    if (kind === 'pen') { x.beginPath(); x.moveTo(0, s * 0.75); x.lineTo(-s * 0.42, -s * 0.05); x.lineTo(0, -s * 0.7); x.lineTo(s * 0.42, -s * 0.05); x.closePath(); x.fill(); x.strokeStyle = 'rgba(40,20,90,0.8)'; x.lineWidth = s * 0.07; x.beginPath(); x.moveTo(0, s * 0.68); x.lineTo(0, s * 0.02); x.stroke(); x.fillStyle = 'rgba(40,20,90,0.8)'; x.beginPath(); x.arc(0, 0, s * 0.1, 0, TAU); x.fill(); }
+    else if (kind === 'chart') { [0.35, 0.6, 0.9].forEach((hh, i) => { rr(x, -s * 0.6 + i * s * 0.42, s * 0.6 - hh * s, s * 0.3, hh * s, s * 0.08); x.fill(); }); }
+    else if (kind === 'gear') { x.beginPath(); for (let i = 0; i < 16; i++) { const a = (i / 16) * TAU, rr2 = i % 2 ? s * 0.48 : s * 0.66; x.lineTo(Math.cos(a) * rr2, Math.sin(a) * rr2); } x.closePath(); x.fill(); x.fillStyle = 'rgba(30,40,120,0.9)'; x.beginPath(); x.arc(0, 0, s * 0.2, 0, TAU); x.fill(); }
+    else if (kind === 'speech') { rr(x, -s * 0.66, -s * 0.5, s * 1.32, s * 0.88, s * 0.3); x.fill(); x.beginPath(); x.moveTo(-s * 0.3, s * 0.3); x.lineTo(-s * 0.45, s * 0.7); x.lineTo(0, s * 0.36); x.fill(); x.fillStyle = 'rgba(120,80,10,0.85)'; for (const k of [-1, 0, 1]) { x.beginPath(); x.arc(k * s * 0.3, -s * 0.06, s * 0.09, 0, TAU); x.fill(); } }
+    else if (kind === 'heart') { x.beginPath(); x.moveTo(0, s * 0.55); x.bezierCurveTo(-s * 0.9, -s * 0.05, -s * 0.45, -s * 0.75, 0, -s * 0.28); x.bezierCurveTo(s * 0.45, -s * 0.75, s * 0.9, -s * 0.05, 0, s * 0.55); x.fill(); }
+    x.restore();
+  }
+  function bubbleIcon(x, cx, cy, r, kind, col, s) {
+    if (s <= 0.01) return;
+    x.save(); x.translate(cx, cy); x.scale(s, s);
+    glow(x, 0, 0, r * 1.8, col, 0.35);
+    ball(x, 0, 0, r, ['#ffffff', H.rgba(H.mix(col, '#ffffff', 0.4)), col], { sha: 0.35 });
+    icon(x, kind, 0, 0, r * 0.62);
+    x.restore();
+  }
+  function lightbulb(x, cx, cy, r, on) {
+    if (r < 1) return;
+    if (on > 0) { glow(x, cx, cy, r * 3.2, '#ffe066', 0.6 * on); x.save(); x.globalAlpha *= on; x.strokeStyle = '#ffe680'; x.lineWidth = r * 0.12; x.lineCap = 'round'; for (let i = 0; i < 7; i++) { const a = -Math.PI + (i / 6) * Math.PI; x.beginPath(); x.moveTo(cx + Math.cos(a) * r * 1.35, cy + Math.sin(a) * r * 1.35); x.lineTo(cx + Math.cos(a) * r * 1.75, cy + Math.sin(a) * r * 1.75); x.stroke(); } x.restore(); }
+    x.fillStyle = '#9a96c8'; rr(x, cx - r * 0.42, cy + r * 0.78, r * 0.84, r * 0.5, r * 0.15); x.fill();
+    ball(x, cx, cy, r, on > 0.5 ? ['#fffbe0', '#ffe066', '#e8961c'] : ['#f0eeff', '#c9c4ee', '#6a63b0'], { sha: 0.35 });
+  }
+  function lever(x, fx, fy, len, ang, k) {
+    if (k <= 0.01) return;
+    x.save(); x.globalAlpha *= cl(k);
+    x.fillStyle = '#5a63e6'; x.beginPath(); x.moveTo(fx, fy - 10); x.lineTo(fx - 70, fy + 110); x.lineTo(fx + 70, fy + 110); x.closePath(); x.fill();
+    x.fillStyle = 'rgba(255,255,255,0.3)'; x.beginPath(); x.moveTo(fx, fy); x.lineTo(fx - 50, fy + 100); x.lineTo(fx - 20, fy + 100); x.closePath(); x.fill();
+    x.translate(fx, fy); x.rotate(ang);
+    const g = x.createLinearGradient(0, -18, 0, 18); g.addColorStop(0, '#ffcf8a'); g.addColorStop(1, '#c46a2a');
+    x.fillStyle = 'rgba(10,8,46,0.4)'; rr(x, -len * 0.3 + 6, -14, len, 36, 18); x.fill();
+    x.fillStyle = g; rr(x, -len * 0.3, -20, len, 36, 18); x.fill();
+    x.restore();
+  }
+  function block(x, cx, cy, w, h, label, pal, s) {
+    if (s <= 0.01) return;
+    x.save(); x.translate(cx, cy); x.scale(s, s);
+    x.fillStyle = 'rgba(10,8,46,0.45)'; rr(x, -w / 2 + 10, -h / 2 + 14, w, h, 22); x.fill();
+    const g = x.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2); g.addColorStop(0, pal[0]); g.addColorStop(0.5, pal[1]); g.addColorStop(1, pal[2]);
+    x.fillStyle = g; rr(x, -w / 2, -h / 2, w, h, 22); x.fill();
+    x.fillStyle = 'rgba(255,255,255,0.35)'; rr(x, -w / 2 + 16, -h / 2 + 10, w - 32, 12, 6); x.fill();
+    x.fillStyle = H.rgba(pal[2], 0.35); rr(x, -w / 2, h / 2 - 22, w, 22, 11); x.fill();
+    text(x, label, 0, 4, 44, '#ffffff', { shadow: H.rgba(pal[2], 0.8) });
+    x.restore();
+  }
+  function stampX(x, cx, cy, r, s) { badge(x, cx, cy, r, 'no', s); }
+  function speedLines(x, t, a, vertical) {
+    if (a <= 0.01) return;
+    const r = H.rng(Math.floor(t * 30) + 5);
+    x.save(); x.globalAlpha = a; x.strokeStyle = '#ffffff'; x.lineCap = 'round';
+    for (let i = 0; i < 26; i++) {
+      const p = r.range(0, vertical ? PW : PH), l = r.range(200, 700), q = r.range(-300, vertical ? PH : PW);
+      x.lineWidth = r.range(3, 10); x.globalAlpha = a * r.range(0.2, 0.7); x.beginPath();
+      if (vertical) { x.moveTo(p, q); x.lineTo(p, q + l); } else { x.moveTo(q, p); x.lineTo(q + l, p); }
+      x.stroke();
+    }
+    x.restore();
+  }
+  const cloneOpt = { pal: GREY, shirt: GREY_SHIRT, lid: '#b9b4e2' };
+
+  // ================= TIMELINE (seconds on the voice track) =================
+  const T = {
+    sweep: [13.15, 13.85], whip1: [34.95, 35.32], dive: [44.2, 44.72], whip2: [53.45, 53.92], whip3: [61.0, 61.42],
+  };
+  // headlines: only the lines that carry the idea, each word lands as it is spoken
+  hl(0, 1.85, 470, 124, "YOU'RE@-1 NOT@-1 PAID@-1|FOR@0.7 YOUR@0.9 TIME@1.04#g*1.15");
+  hl(1.92, 4.5, 430, 100, "YOU'RE@1.92 PAID@2.14 FOR@2.42 HOW@2.62|REPLACEABLE@2.8#r*1.25|YOU@3.56 ARE@3.78");
+  hl(4.7, 6.85, 430, 100, "MOST@4.7 PEOPLE@4.92 BELIEVE@5.18|TO@5.86 EARN@6.0#g MORE@6.24#g");
+  hl(6.96, 8.6, 450, 116, "WORK@6.96 HARDER?@7.14#g|OR@7.54 LONGER?@7.86#g");
+  hl(8.72, 10.95, 420, 104, "THE@8.96 MARKET@9.08|DOESN'T@9.36 PAY@9.74 FOR@10.0|EFFORT@10.2#r*1.3");
+  hl(11.08, 13.1, 420, 104, "IT@11.08 PAYS@11.2 FOR@11.54 WHAT'S@11.8|HARD@12.1#c*1.2 TO@12.28#c*1.2|REPLACE@12.44#c*1.2");
+  hl(13.64, 15.95, 420, 108, "TWO@13.96 PEOPLE@14.34|SAME@14.98#g COMPANY@15.26#g");
+  hl(16.18, 18.95, 420, 100, "ONE@16.18 DOES@16.48 EXACTLY@16.7#g|WHAT@17.24 THE@17.42 JOB@17.54|DESCRIPTION@17.76 SAYS@18.1");
+  hl(19.06, 22.7, 420, 104, "IF@19.06 THEY@19.22 LEFT@19.36#r|SOMEONE@20.32 NEW@20.56|BY@21.58 NEXT@21.72#r WEEK@21.9#r");
+  hl(22.82, 25.05, 430, 104, "THE@22.82 OTHER@23.0|UNDERSTANDS@23.36|CUSTOMERS@24.36#p");
+  hl(25.16, 27.2, 430, 104, "SOLVES@25.16 PROBLEMS@25.68#c|NOBODY@26.06 ELSE@26.6|CAN@26.92");
+  hl(27.28, 31.05, 420, 104, "IF@27.28 THEY@27.96 LEFT@28.2#r|THE@28.8 COMPANY@28.92|FEELS@29.46#r IT@29.76#r");
+  hl(31.24, 32.55, 450, 116, "SAME@31.84#g|HOURS@32.04#g");
+  hl(32.6, 34.95, 430, 108, "ONLY@32.9 ONE@33.2|HAS@33.86|LEVERAGE@34.12#g*1.3");
+  hl(35.28, 40.3, 400, 96, "EASY@35.58#r TO@35.88#r REPLACE@36.06#r|PAY@37.02 SET@37.48 BY@37.68|THE@37.84 CHEAPEST@37.96#r*1.2");
+  hl(40.42, 44.2, 400, 96, "HARD@40.8#c TO@41.04#c REPLACE@41.22#c|SET@42.26 BY@42.46 WHAT@42.64|IT@42.86 WOULD@42.98 COST@43.06#g|TO@43.42 LOSE@43.64#g YOU@43.92#g");
+  hl(44.74, 46.35, 430, 108, "THE@45.18 MOST@45.3|VALUABLE@45.62#g|PEOPLE@46.0");
+  hl(46.42, 48.65, 430, 108, "RARELY@46.42 HAVE@46.88|JUST@47.34 ONE@47.56#r|SKILL@47.86#r");
+  hl(48.76, 51.05, 420, 104, "A@48.76 DESIGNER@48.88#p|WHO@49.3 UNDERSTANDS@49.58|SALES@50.08#n*1.2");
+  hl(51.14, 53.45, 420, 100, "AN@51.14 ENGINEER@51.3#c|WHO@51.62 CAN@52.04 EXPLAIN@52.18#g|IDEAS@52.56 CLEARLY@53.08");
+  hl(54.06, 57.6, 420, 100, "HARD@55.1#c TO@55.48#c REPLACE@55.64#c|DOESN'T@56.0 HAPPEN@56.48|OVERNIGHT@56.78#r*1.2");
+  hl(57.78, 61.0, 420, 104, "ONE@58.16 SKILL@58.5#c|ONE@59.32 SOLVED@59.48 PROBLEM@59.88#p|AT@60.32 A@60.52 TIME@60.62");
+  hl(61.4, 64.5, 420, 104, "BECOMING@61.6 WEALTHY@61.96#g|ISN'T@62.44#r ABOUT@62.94|MORE@63.56 HOURS@63.8");
+  hl(64.68, DUR + 1, 400, 100, "BECOME@65.02 THE@65.38 PERSON@65.62|WHOSE@66.0 HOURS@66.22 ARE@66.72|WORTH@67.06#g*1.35 MORE@67.36#g*1.35");
+  const KEYS = []; HL.forEach((h) => h.lines.forEach((ln) => ln.forEach((p) => { if (p.key && p.t > 0) KEYS.push(p.t); })));
+
+  // ================= SCENE 1: the hook -> effort -> what's hard to replace =================
+  const CROWD = [-2, -1, 0, 1, 2].map((i) => [540 + i * 225, 1340]);
+  function s1(x, t) {
+    const c = camAt(t, [[0, 540, 1150, 1.0, 0], [1.9, 540, 1150, 1.0, 0.3], [4.6, 540, 1220, 0.95, 0.55], [8.65, 540, 1180, 1.0, 0.4], [10.95, 540, 2200, 1.0, 0.38]]);
+    const night = seg(t, 7.6, 8.2) * (1 - seg(t, 8.7, 9.2));
+    skyP(x, t, { x: c[0] * 0.3, y: c[1] * 0.25, z: c[2], red: 0.35 * night });
+    x.save(); camApply(x, t, c, { punch: punchK(t, [0, 1.04, 2.8, 6.96, 7.86, 10.2, 12.1]) * (1 + 0.25 * (1 - eo(seg(t, 0, 0.35)))), shake: shakeK(t, [0.02, 1.04, 10.2], 18) });
+    planet(x, 140, 820, 60, PL.coral, { glowA: 0.25 });
+    planet(x, 960, 1650, 46, PL.moon);
+    // the hook clock: "you're not paid for your time"
+    const cOut = eio(seg(t, 1.9, 2.25));
+    if (cOut < 1) {
+      alarmClock(x, lerp(540, 1250, cOut), lerp(1150, 700, cOut), 230 * (1 - 0.4 * cOut), { t, ring: t < 1.0 ? 0.6 : 0, h: 9 + t * 3 });
+      stampX(x, 700, 980, 80, back(seg(t, 1.04, 1.3), 2.2) * (1 - cOut));
+    }
+    // the person, swapped for a clone on "replaceable"
+    const pin = back(seg(t, 1.95, 2.3), 1.8), sw = eio(seg(t, 2.8, 3.15));
+    if (t > 1.9 && t < 4.75) {
+      bean(x, lerp(540, -260, sw), 1220, 170 * pin, { t, look: [0.2, -0.3], blink: blinkAt(t, 0.3), shock: sw > 0.1 });
+      if (sw > 0) bean(x, lerp(1340, 540, sw), 1220, 170, { t, ...cloneOpt, look: [-0.3, -0.2] });
+      const pk = eo(seg(t, 3.56, 3.9));
+      if (pk > 0) [[-1, 200], [1, 880]].forEach(([d, px]) => bean(x, px, 1290, 120 * pk, { t: t + d, ...cloneOpt, look: [-d * 0.6, 0] }));
+    }
+    // the crowd working harder and longer
+    const cw = eo(seg(t, 4.62, 5.0));
+    if (t > 4.6 && t < 11.3) {
+      CROWD.forEach(([px, py], i) => {
+        const s = back(seg(t, 4.62 + Math.abs(i - 2) * 0.06, 5.0 + Math.abs(i - 2) * 0.06), 1.6), speed = t > 6.96 ? 3 : 1;
+        const bob = Math.abs(Math.sin(t * 5 * speed + i)) * 16 * (t > 6.96 ? 1 : 0.4);
+        const dim = 1 - 0.55 * seg(t, 8.9, 9.3);
+        x.save(); x.globalAlpha = dim;
+        bean(x, px, py - bob, 104 * s, { t: t * speed + i, ...(i === 2 ? {} : cloneOpt), tired: true, hard: 1, sweat: seg(t, 6.96, 7.2), armUp: t > 6.96 ? 0.5 + 0.5 * Math.sin(t * 12 + i) : 0 });
+        alarmClock(x, px, py - 245, 52 * back(seg(t, 5.2 + i * 0.05, 5.5 + i * 0.05)), { t, h: 9 + (t - 5.2) * (t > 7.86 ? 9 : 2) });
+        x.restore();
+      });
+      // the effort drop gets crossed out
+      const es = back(seg(t, 9.05, 9.4), 1.8) * (1 - eio(seg(t, 10.95, 11.2)));
+      if (es > 0) {
+        x.save(); x.translate(540, 960); x.scale(es * 1.25, es * 1.25);
+        glow(x, 0, 0, 260, '#56e8ff', 0.35);
+        x.fillStyle = '#7fe6ff'; x.beginPath(); x.moveTo(0, -150); x.quadraticCurveTo(110, 10, 0, 100); x.quadraticCurveTo(-110, 10, 0, -150); x.fill();
+        x.fillStyle = 'rgba(255,255,255,0.6)'; x.beginPath(); x.ellipse(-30, 10, 18, 34, -0.3, 0, TAU); x.fill();
+        x.restore();
+        pill(x, 540, 1160, 'EFFORT', 54, { s: es, bg: '#bff6ff' });
+        stampX(x, 660, 900, 80, back(seg(t, 10.2, 10.45), 2.2) * (es > 0.1 ? 1 : 0));
+      }
+    }
+    // what's hard to replace: a rare gem, coins orbiting
+    if (t > 10.8) {
+      const gs = back(seg(t, 11.15, 11.6), 1.6);
+      gem(x, 540, 2260 + Math.sin(t * 2) * 10, 250 * gs, { t, glowA: 0.45 + 0.4 * Math.max(0, 1 - Math.abs(t - 12.2) / 0.4) });
+      for (let i = 0; i < 5; i++) { const a = t * 1.3 + (i * TAU) / 5, d = Math.sin(a); coin(x, 540 + Math.cos(a) * 380, 2260 + d * 110, 52 * gs * (0.8 + 0.2 * d), { glowA: 0.3 }); }
+      burst(x, 540, 2260, (t - 12.1) * 1.2, 121, 380);
+    }
+    x.restore();
+  }
+
+  // ================= SCENE 2: two people at the same company -> leverage =================
+  const A = [300, 1280], B = [780, 1280];
+  function s2(x, t) {
+    const wx = 1700 * H.ease.in(seg(t, T.whip1[0], 35.12));
+    const c = camAt(t, [[13.5, 540, 1250, 0.95, 0], [15.0, 540, 1240, 1.0, 0.45], [16.15, 370, 1270, 1.3, 0.4], [19.0, 430, 1250, 1.12, 0.35], [22.8, 750, 1270, 1.3, 0.4], [27.25, 540, 1240, 1.0, 0.4], [31.2, 600, 1250, 1.0, 0.35]]);
+    const alarm = seg(t, 28.5, 28.8) * (1 - seg(t, 30.8, 31.2));
+    skyP(x, t, { x: c[0] * 0.3 + wx * 0.4, y: c[1] * 0.25, z: c[2], red: 0.45 * alarm });
+    x.save(); camApply(x, t, c, { dx: -wx, punch: punchK(t, [15.26, 21.9, 25.68, 29.46, 32.04, 34.12]), shake: shakeK(t, [28.25, 29.92, 34.12], 20) });
+    // horizon + company tower
+    planet(x, 540, 2950, 1400, PL.teal, { glowA: 0.2, atmo: 1 });
+    const bs = back(seg(t, 14.9, 15.35), 1.4) * (1 - eio(seg(t, 31.0, 31.35)));
+    if (bs > 0) { x.save(); x.translate(540, 1560); x.scale(bs, bs); building(x, 0, 0, 300, 500, { t, alarm, crack: eio(seg(t, 28.9, 29.95)), shake: alarm * (t < 30.2 ? 1 : 0.3) }); x.restore(); }
+    // person A: does the job description; leaves; a clone does it by next week
+    const aOut = eio(seg(t, 19.36, 19.7)), aIn = back(seg(t, 13.96, 14.3), 1.8);
+    if (aOut < 1) bean(x, lerp(A[0], -260, aOut), A[1] + Math.sin(t * 2.2) * 6, 120 * aIn, { t, look: [0.4, -0.2], blink: blinkAt(t, 1), tired: t > 31.2 });
+    const cIn = eo(seg(t, 20.32, 20.65));
+    if (cIn > 0) bean(x, lerp(-260, A[0], cIn), A[1] + Math.sin(t * 2.2) * 6, 120, { t, ...cloneOpt, look: [0.4, -0.2], tired: t > 31.2, sweat: seg(t, 33.5, 33.8) });
+    const cbs = back(seg(t, 16.5, 16.85), 1.8) * (1 - eio(seg(t, 19.0, 19.3)));
+    if (cbs > 0) { x.save(); x.translate(520, 1130); x.scale(cbs, cbs); clipboard(x, 0, 0, 200, seg(t, 16.7, 18.2)); x.restore(); }
+    const cal = back(seg(t, 21.65, 22.0), 2) * (1 - eio(seg(t, 22.75, 23.0)));
+    calendar(x, 540, 1040, 170 * cal, '+7 DAYS', 1, 1, 0.26);
+    const lift = seg(t, 33.2, 34.1), LV = { fx: 660, fy: 1470, len: 560 }, ang = lerp(-0.18, 0.2, eio(lift)), onL = eio(seg(t, 32.85, 33.2));
+    // leverage: B pushes the long arm, a heavy pile of coins rises on the short arm
+    const lk = back(seg(t, 32.6, 32.95), 1.4);
+    if (lk > 0) {
+      const { fx, fy, len } = LV;
+      lever(x, fx, fy, len, ang, lk);
+      const px = fx + Math.cos(ang) * (-len * 0.3 + 70), py = fy + Math.sin(ang) * (-len * 0.3 + 70) - 30;
+      for (let i = 0; i < 6; i++) coin(x, px + (i % 2) * 10 - 5, py - i * 34, 48 * lk, { glowA: i === 5 ? 0.5 : 0, flip: 1 });
+      if (t > 34.12) { glow(x, px, py - 120, 300, '#ffd23f', 0.5 * Math.max(0, 1 - (t - 34.12) / 0.8)); burst(x, px, py - 120, (t - 34.12) * 1.2, 341, 260); }
+    }
+    // person B: customers, solved problems; leaves and the company feels it
+    const bIn = back(seg(t, 14.34, 14.7), 1.8), bOut = eio(seg(t, 28.2, 28.5)) * (1 - eio(seg(t, 31.0, 31.3)));
+    const bxPos = lerp(lerp(B[0], 1340, bOut), LV.fx + Math.cos(ang) * (LV.len * 0.7 - 70), onL);
+    const byPos = lerp(B[1], LV.fy + Math.sin(ang) * (LV.len * 0.7 - 70) - 20 - 120 * 1.05, onL);
+    bean(x, bxPos, byPos + Math.sin(t * 2.4) * 6 * (1 - onL), 120 * bIn, { t, shirt: GOLD_SHIRT, happy: t > 25.9 && t < 27.9 ? 1 : 0, look: [-0.3, -0.3], blink: blinkAt(t, 2), armUp: t > 34.1 ? 1 : 0 });
+    ['heart', 'heart', 'heart'].forEach((k, i) => { const s = back(seg(t, 24.36 + i * 0.12, 24.7 + i * 0.12), 2) * (1 - eio(seg(t, 25.1, 25.3))); bubbleIcon(x, B[0] + [-170, 0, 170][i], 1060 + [30, -40, 30][i] + Math.sin(t * 3 + i) * 8, 52, k, C.pink, s); });
+    const lb = back(seg(t, 25.16, 25.5), 1.8) * (1 - eio(seg(t, 27.1, 27.4)));
+    lightbulb(x, B[0], 1010, 70 * lb, seg(t, 25.68, 25.8));
+    if (t > 25.7 && t < 27.3) burst(x, B[0], 1010, (t - 25.7) * 1.3, 255, 200);
+    // empty spot where B stood
+    const gap = seg(t, 28.3, 28.5) * (1 - seg(t, 30.9, 31.1));
+    if (gap > 0) { x.save(); x.globalAlpha = gap; x.strokeStyle = '#ffffff'; x.lineWidth = 8; x.setLineDash([2, 22]); x.lineCap = 'round'; x.beginPath(); x.arc(B[0], B[1], 120, 0, TAU); x.stroke(); x.restore(); text(x, '?', B[0], B[1], 120, '#ffffff', { a: gap }); }
+    // same hours: a clock over each
+    const ck = back(seg(t, 31.4, 31.75), 1.8) * (1 - eio(seg(t, 34.9, 35.0)));
+    if (ck > 0) { alarmClock(x, A[0], 1020, 62 * ck, { t, h: 9 + (t - 31.4) * 2 }); alarmClock(x, B[0], 1020, 62 * ck, { t, h: 9 + (t - 31.4) * 2 }); }
+    x.restore();
+  }
+
+  // ================= SCENE 3: what sets your pay =================
+  const QUEUE = [['$$$$', 200], ['$$$', 427], ['$$', 653], ['$', 880]];
+  function s3(x, t) {
+    const wx = -1700 * (1 - H.ease.out(seg(t, 35.12, T.whip1[1])));
+    const z = Math.exp(Math.log(10) * H.ease.in(seg(t, T.dive[0], T.dive[1])));
+    const c = camAt(t, [[35.1, 540, 1140, 1.12, 0], [40.35, 540, 2230, 1.12, 0.42]]);
+    skyP(x, t, { x: c[0] * 0.3 - wx * 0.4, y: c[1] * 0.25, z: c[2] * z });
+    x.save(); camApply(x, t, c, { dx: -wx, punch: punchK(t, [36.06, 37.96, 41.22, 43.06]) });
+    x.translate(540, 2300); x.scale(z, z); x.translate(-540, -2300);
+    // easy to replace: a queue of look-alikes with falling price tags
+    QUEUE.forEach(([lab, px], i) => {
+      const s = back(seg(t, 35.5 + i * 0.12, 35.85 + i * 0.12), 1.8), cheap = i === 3 && t > 37.96;
+      bean(x, px, 1180 + Math.sin(t * 2 + i) * 5, 90 * s, { t: t + i, ...cloneOpt, look: [0, -0.4], blink: blinkAt(t, i) });
+      priceTag(x, px, 1010, lab, back(seg(t, 36.3 + i * 0.15, 36.6 + i * 0.15), 2), { rot: (i - 1.5) * 0.05, hot: cheap ? C.red : null, bg: cheap ? '#ffd0d8' : '#ffffff' });
+    });
+    if (t > 37.96) arrow(x, [[880, 1080], [920, 1260], [760, 1330], [600, 1390]], eio(seg(t, 37.96, 38.3)), '#ff8fa8', 10, { dots: true });
+    gauge(x, 540, 1460, 760, lerp(0.75, 0.16, eio(seg(t, 38.3, 38.9))), 'YOUR PAY', seg(t, 38.3, 38.9) > 0.5 ? '#ff5d8f' : '#ffd23f', seg(t, 36.8, 37.1) * (1 - seg(t, 40.3, 40.5)));
+    // hard to replace: the gold-shirt person with a gem badge, pay set by the cost to lose them
+    const bs = back(seg(t, 40.5, 40.9), 1.6);
+    bean(x, 540, 2230 + Math.sin(t * 2) * 6, 140 * bs, { t, shirt: GOLD_SHIRT, happy: t > 43.0 ? 1 : 0, look: [0, -0.3], armUp: t > 43.06 ? 1 : 0 });
+    gem(x, 540, 2300, 46 * back(seg(t, 41.2, 41.5), 2), { t, glowA: 0.6 });
+    const bd = back(seg(t, 42.6, 42.9), 1.6);
+    if (bd > 0) { x.save(); x.translate(860, 2190); x.scale(bd * 0.3, bd * 0.3); building(x, 0, 0, 380, 640, { t, crack: seg(t, 43.6, 44.0), alarm: seg(t, 43.6, 43.8) }); x.restore(); }
+    const g2 = lerp(0.3, 1.12, eio(seg(t, 43.06, 43.9)));
+    gauge(x, 540, 2520, 760, g2, 'YOUR PAY', '#ffd23f', seg(t, 41.6, 41.9));
+    if (t > 43.9) burst(x, 540 + 380 * 1.1, 2520, (t - 43.9) * 1.3, 439, 200);
+    x.restore();
+  }
+
+  // ================= SCENE 4: two skills that overlap =================
+  const ORB = { design: ['#ffc4e6', '#ff5db0', '#8a1c6a'], sales: ['#b6ffd6', '#2fcf7e', '#126a4a'], eng: ['#a4fbef', '#3a9be0', '#1d2f86'], talk: ['#fff3b0', '#ffc93f', '#b5620e'] };
+  function s4(x, t) {
+    const em = 1 + 1.4 * (1 - eo(seg(t, T.dive[1], T.dive[1] + 0.6)));
+    const wy = 1900 * H.ease.in(seg(t, T.whip2[0], 53.67));
+    skyP(x, t, { x: 200 + t * 10, y: wy * 0.3, z: em });
+    x.save(); camApply(x, t, [540, 1060, 1.08], { dy: wy, punch: punchK(t, [47.86, 50.08, 52.18]) * em });
+    // one skill alone, then crossed out
+    const one = back(seg(t, 44.8, 45.2), 1.6) * (1 - eio(seg(t, 48.7, 48.95)));
+    if (one > 0) {
+      ball(x, 540, 1160, 200 * one, ORB.design, { sha: 0.4 });
+      icon(x, 'pen', 540, 1160, 120 * one);
+      pill(x, 540, 1440, 'ONE SKILL', 48, { s: one });
+      stampX(x, 720, 1000, 74, back(seg(t, 47.86, 48.1), 2.2) * (one > 0.2 ? 1 : 0));
+    }
+    // two overlapping skills: design + sales, then engineering + communication
+    const two = back(seg(t, 48.85, 49.3), 1.4);
+    if (two > 0) {
+      const m = eio(seg(t, 51.14, 51.6)), sp = lerp(320, 210, eo(seg(t, 49.0, 50.1)));
+      const left = m < 0.5 ? ORB.design : ORB.eng, right = m < 0.5 ? ORB.sales : ORB.talk, li = m < 0.5 ? 'pen' : 'gear', ri = m < 0.5 ? 'chart' : 'speech';
+      const flip = Math.abs(Math.cos(m * Math.PI)), R = 230 * two;
+      const L = [540 - sp, 1160], Rp = [540 + sp, 1160];
+      x.save(); x.globalAlpha = 0.92;
+      x.save(); x.translate(L[0], L[1]); x.scale(flip, 1); ball(x, 0, 0, R, left, { sha: 0.35 }); x.restore();
+      x.save(); x.translate(Rp[0], Rp[1]); x.scale(flip, 1); ball(x, 0, 0, R, right, { sha: 0.35 }); x.restore();
+      x.restore();
+      // the overlap glows: that's the rare part
+      const ov = seg(t, 49.6, 50.1);
+      x.save(); x.beginPath(); x.arc(L[0], L[1], R, 0, TAU); x.clip(); x.beginPath(); x.arc(Rp[0], Rp[1], R, 0, TAU); x.fillStyle = H.rgba('#fff3b0', 0.85 * ov); x.fill(); x.restore();
+      if (ov > 0) { glow(x, 540, 1160, 260, '#ffd23f', 0.6 * ov); spark(x, 540, 1160, 70 * ov * (0.85 + 0.15 * Math.sin(t * 6)), '#ffffff', 1); }
+      x.save(); x.translate(L[0] - R * 0.42, L[1]); x.scale(flip, 1); icon(x, li, 0, 0, 100 * two); x.restore();
+      x.save(); x.translate(Rp[0] + R * 0.42, Rp[1]); x.scale(flip, 1); icon(x, ri, 0, 0, 100 * two); x.restore();
+      pill(x, 540, 1440, 'RARE MIX', 52, { s: back(seg(t, 50.1, 50.45), 2), bg: C.yellow });
+      const lab = m < 0.5 ? ['DESIGN', 'SALES'] : ['ENGINEERING', 'EXPLAINING'];
+      text(x, lab[0], L[0] - 40, 880, 46, H.rgba(left[0]), { a: two * flip });
+      text(x, lab[1], Rp[0] + 40, 880, 46, H.rgba(right[0]), { a: two * flip });
+      if (t > 50.08) burst(x, 540, 1160, (t - 50.08) * 1.2, 500, 300);
+      if (t > 52.18) burst(x, 540, 1160, (t - 52.18) * 1.2, 521, 300);
+    }
+    x.restore();
+  }
+
+  // ================= SCENE 5: not overnight, one block at a time =================
+  const STEPS = [[58.5, 'SKILL', ORB.eng], [59.88, 'PROBLEM', ORB.design], [60.4, 'SKILL', ORB.sales], [60.7, 'PROBLEM', ORB.talk]];
+  const stepPos = (i) => [200 + i * 225, 1640 - i * 170];
+  function s5(x, t) {
+    const wy = -1900 * (1 - H.ease.out(seg(t, 53.67, T.whip2[1])));
+    const up = 1900 * H.ease.in(seg(t, T.whip3[0], 61.2));
+    skyP(x, t, { x: 300 + t * 12, y: (wy + up) * 0.3 });
+    const top = STEPS.filter(([ts]) => t >= ts).length;
+    const camY = lerp(1220, 1200, seg(t, 58.3, 61));
+    x.save(); camApply(x, t, [540, camY, 1], { dy: wy + up, punch: punchK(t, [56.78, 58.5, 59.88]), shake: shakeK(t, [56.78], 14) });
+    // overnight? no.
+    const mo = back(seg(t, 54.1, 54.5), 1.6) * (1 - eio(seg(t, 57.7, 58.0)));
+    if (mo > 0) {
+      crescentMoon(x, 540, 1160, 230 * mo);
+      const s = moonSeat(540, 1160, 230 * mo, 92 * mo); bean(x, s[0], s[1], 92 * mo, { t, sleep: true, cap: 1, noFeet: true, rot: -0.12, zzz: mo });
+      stampX(x, 760, 960, 90, back(seg(t, 56.78, 57.05), 2.2) * (mo > 0.2 ? 1 : 0));
+    }
+    // the staircase, one block per skill / solved problem; the person climbs it
+    if (t > 57.9) {
+      STEPS.forEach(([ts, lab, pal], i) => { const [bx, by] = stepPos(i); block(x, bx, by + (1 - cl(back(seg(t, ts, ts + 0.3), 1.6))) * -200, 210, 160, lab, pal, back(seg(t, ts - 0.05, ts + 0.25), 1.6)); });
+      const k = Math.max(0, top - 1), prev = Math.max(0, top - 2), ts = top ? STEPS[top - 1][0] : 58, hop = eio(seg(t, ts + 0.05, ts + 0.3));
+      const p0 = top > 1 ? stepPos(prev) : [120, 1800], p1 = top ? stepPos(k) : [120, 1800];
+      const bxp = lerp(p0[0], p1[0], hop), byp = lerp(p0[1] - 80, p1[1] - 80, hop) - 130 * Math.sin(hop * Math.PI) - 92;
+      bean(x, bxp, byp, 92 * back(seg(t, 57.95, 58.3), 1.6), { t, shirt: GOLD_SHIRT, happy: 1, hard: 1, armUp: hop < 1 ? 1 : 0 });
+    }
+    x.restore();
+  }
+
+  // ================= SCENE 6: hours that are worth more =================
+  function s6(x, t) {
+    const wy = -1900 * (1 - H.ease.out(seg(t, 61.2, T.whip3[1])));
+    const g = eio(seg(t, 64.68, 65.2));
+    skyP(x, t, { x: 500 + t * 14, y: wy * 0.3 });
+    x.save(); camApply(x, t, [540, 1180, 1], { dy: wy, punch: punchK(t, [61.96, 63.8, 67.06], 0.07), shake: shakeK(t, [67.06], 16) });
+    planet(x, 540, 2650, 1150, PL.teal, { glowA: 0.2, atmo: 1 });
+    flare(x, 540, 1060, Math.max(0, 1 - Math.abs(t - 67.25) / 0.9) * (t > 67.06 ? 1 : 0) + 0.35 * seg(t, 67.6, 68), t);
+    // the clock: spinning through more hours, then turning gold
+    const cs = back(seg(t, 61.3, 61.7), 1.6), spin = t < 64.6 ? (t - 61.3) * 6 : 20 + (t - 64.6) * 0.5;
+    x.save(); x.translate(540, 1060); x.scale(cs, cs);
+    if (g > 0) glow(x, 0, 0, 400, '#ffd23f', 0.5 * g);
+    alarmClock(x, 0, 0, 170, { t, h: 9 + spin });
+    if (g > 0) { x.save(); x.globalAlpha = g; ball(x, 0, 0, 170, GOLD, { sha: 0.4 }); x.fillStyle = '#fffaf0'; x.beginPath(); x.arc(0, 0, 126, 0, TAU); x.fill(); text(x, '$', 0, 8, 150, '#d98d1a', { shadow: 'rgba(0,0,0,0)' }); x.restore(); }
+    x.restore();
+    pill(x, 540, 1330, '+ MORE HOURS', 50, { s: back(seg(t, 63.56, 63.85), 2) * (1 - eio(seg(t, 64.6, 64.8))), bg: '#ffd0d8' });
+    stampX(x, 790, 1310, 64, back(seg(t, 63.8, 64.05), 2.2) * (1 - eio(seg(t, 64.6, 64.8))));
+    // the price of one hour climbs
+    const tags = ['$', '$$', '$$$', '$$$$'], ti = t < 66.22 ? 0 : t < 66.72 ? 1 : t < 67.06 ? 2 : 3;
+    priceTag(x, 800, 880, tags[ti] + ' / HR', back(seg(t, 65.6, 65.9), 2) * (1 + 0.15 * Math.sin(seg(t, [66.22, 66.72, 67.06][Math.max(0, ti - 1)] || 0, ([66.22, 66.72, 67.06][Math.max(0, ti - 1)] || 0) + 0.3) * Math.PI)), { rot: 0.12, bg: ti === 3 ? C.yellow : '#ffffff' });
+    bean(x, 540, 1440 + Math.sin(t * 2) * 5, 120 * back(seg(t, 61.5, 61.9), 1.6), { t, shirt: GOLD_SHIRT, happy: t > 64.7 ? 1 : 0, tired: t < 64.7, sweat: t < 64.6 ? seg(t, 62.5, 62.8) : 0, armUp: t > 67.06 ? 1 : 0 });
+    for (let i = 0; i < 8; i++) { const ts = 65.2 + i * 0.32, u = (t - ts) / 1.2; if (u > 0 && u < 1) coin(x, 540 + Math.sin(i * 2.3) * 300 * u, 1060 - 200 * u + 400 * u * u, 30 * back(cl(u / 0.15)), { glowA: 0.3, flip: Math.cos(u * 9) }); }
+    burst(x, 540, 1060, (t - 67.06) * 1.0, 671, 420);
+    if (t > 67.3) for (let i = 0; i < 9; i++) { const q = H.rng(700 + i); spark(x, q.range(80, 1000), q.range(250, 1500), q.range(10, 20) * (0.5 + 0.5 * Math.sin(t * 3 + i)), '#ffffff', seg(t, 67.3, 67.6)); }
+    x.restore();
+  }
+
+  // ================= EXPLAINER =================
+  function explainerV(ctx, W, H_, t) {
+    const x = ctx;
+    const sw = eio(seg(t, T.sweep[0], T.sweep[1]));
+    const sx = lerp(PW + 1500, -1500, sw), sy = lerp(PH + 600, -600, sw);
+    if (t < T.sweep[0] || sx > 540) s1(x, t);
+    else if (t < 35.12) s2(x, t);
+    else if (t < T.dive[1]) s3(x, t);
+    else if (t < 53.67) s4(x, t);
+    else if (t < 61.2) s5(x, t);
+    else s6(x, t);
+    if (sw > 0 && sw < 1) planet(x, sx, sy, 1300, PL.magenta, { glowA: 0.4, ringA: 0 });
+    speedLines(x, t, Math.max(0, 1 - Math.abs(t - 35.12) / 0.2) * 0.8, false);
+    speedLines(x, t, Math.max(0, 1 - Math.abs(t - 53.67) / 0.22) * 0.8, true);
+    speedLines(x, t, Math.max(0, 1 - Math.abs(t - 61.2) / 0.22) * 0.8, true);
+    const wo = seg(t, T.dive[0] + 0.2, T.dive[1]) * (1 - seg(t, T.dive[1], T.dive[1] + 0.35));
+    if (wo > 0) { const g = x.createRadialGradient(540, 960, 0, 540, 960, 1100); g.addColorStop(0, H.rgba('#ffffff', wo)); g.addColorStop(0.5, H.rgba('#8ff0ff', wo * 0.95)); g.addColorStop(1, H.rgba('#6a4cff', wo * 0.9)); x.fillStyle = g; x.fillRect(0, 0, PW, PH); }
+    // quick white flashes on the hardest hits
+    for (const tf of [0.02, 29.92, 34.12, 67.06]) { const f = Math.max(0, 1 - Math.abs(t - tf - 0.03) / 0.12); if (f > 0) { x.fillStyle = H.rgba('#ffffff', 0.35 * f); x.fillRect(0, 0, PW, PH); } }
+    drawHL(x, t);
+    finish(x, PW, PH, t);
+  }
+
+  // ================= SOUND: effects only, quiet under the voice =================
+  function scoreSoundV(k) {
+    const hz = k.hz;
+    const whoosh = (t, d, g = 0.5, top = 1800) => k.noise(t, { dur: d, color: 'pink', filter: 'bandpass', f: [[0, 300], [d * 0.6, top], [d, 400]], q: 0.6, gain: 0.22 * g, a: d * 0.6, verb: 0.15 });
+    const pluck = (t, n, g = 0.5, p = 0) => { const f = hz(n); k.tone(t, { f, dur: 0.6, gain: 0.12 * g, a: 0.003, pan: p, verb: 0.2 }); k.tone(t, { f: f * 2, type: 'triangle', dur: 0.2, gain: 0.03 * g, pan: p }); };
+    const clink = (t, g = 0.5, p = 0) => { k.tone(t, { f: 'E7', dur: 0.25, gain: 0.04 * g, a: 0.001, pan: p }); k.tone(t + 0.004, { f: hz('E7') * 1.47, dur: 0.14, gain: 0.025 * g, a: 0.001, pan: p }); };
+    const soft = (t, g = 0.5) => k.play('pop', t, { f: 520, gain: 0.35 * g });
+    // the hook hit, kept low and short so the first words stay clear
+    k.play('thud', 0.0, { f: 110, gain: 0.35 }); k.play('swish', 0.0, { dur: 0.2, gain: 0.4 });
+    k.play('stamp', 1.04, { gain: 0.25 });
+    whoosh(1.9, 0.35, 0.4);
+    k.play('swish', 2.8, { dur: 0.25, gain: 0.35 });
+    whoosh(4.6, 0.5, 0.35, 1200);
+    for (let i = 0; i < 5; i++) soft(4.66 + Math.abs(i - 2) * 0.06, 0.4);
+    for (let tt = 7.0; tt < 8.6; tt += 0.12) k.play('tick', tt, { f: 3800, gain: 0.12 });
+    k.play('stamp', 10.2, { gain: 0.3 });
+    whoosh(10.95, 0.4, 0.45);
+    k.play('sparkle', 12.1, { gain: 0.35, n: 5 });
+    for (let i = 0; i < 4; i++) clink(11.6 + i * 0.3, 0.4);
+    // sweep to the company
+    whoosh(T.sweep[0], T.sweep[1] - T.sweep[0], 0.6, 1300);
+    soft(14.05, 0.45); soft(14.45, 0.45); k.play('tock', 15.3, { f: 420, gain: 0.25 });
+    whoosh(16.15, 0.4, 0.3);
+    [16.95, 17.55, 18.1].forEach((tt) => k.play('tick', tt, { f: 3200, gain: 0.25 }));
+    k.play('swish', 19.36, { dur: 0.3, gain: 0.35 }); k.play('swish', 20.32, { dur: 0.3, gain: 0.3 });
+    k.play('paper', 21.7, { dur: 0.2, gain: 0.4 });
+    whoosh(22.8, 0.4, 0.3);
+    [24.4, 24.52, 24.64].forEach((tt, i) => pluck(tt, ['E5', 'G5', 'B5'][i], 0.4));
+    k.play('ding', 25.7, { f: 'G6', gain: 0.18 });
+    k.play('swish', 28.2, { dur: 0.3, gain: 0.35 });
+    k.play('thud', 28.3, { f: 80, gain: 0.3 });
+    for (let tt = 28.6; tt < 30.8; tt += 0.28) k.tone(tt, { f: 'A4', type: 'triangle', dur: 0.12, gain: 0.03, filter: 'lowpass', f2: 1400 });
+    k.play('impact', 29.92, { gain: 0.3 });
+    k.play('swish', 31.0, { dur: 0.25, gain: 0.3 }); soft(31.5, 0.35);
+    k.play('tock', 32.95, { f: 300, gain: 0.3 });
+    k.noise(33.2, { dur: 0.9, color: 'brown', filter: 'lowpass', f: [[0, 200], [0.9, 700]], gain: 0.12, a: 0.8 });
+    k.play('sparkle', 34.12, { gain: 0.35, n: 6 }); for (let i = 0; i < 5; i++) clink(34.15 + i * 0.07, 0.4);
+    // whip to pay
+    whoosh(T.whip1[0], 0.4, 0.7, 2600);
+    for (let i = 0; i < 4; i++) soft(35.62 + i * 0.12, 0.35);
+    for (let i = 0; i < 4; i++) k.play('tick', 36.45 + i * 0.15, { f: 3000, gain: 0.25 });
+    k.tone(38.3, { f: [[0, 520], [0.6, 180]], type: 'triangle', dur: 0.6, gain: 0.05, a: 0.02 });
+    whoosh(40.35, 0.45, 0.4);
+    k.play('sparkle', 41.25, { gain: 0.25, n: 4 });
+    k.tone(43.06, { f: [[0, 220], [0.8, 660]], type: 'triangle', dur: 0.85, gain: 0.05, a: 0.1 });
+    k.play('sparkle', 43.9, { gain: 0.3, n: 5 });
+    // dive into the gem
+    k.play('riser', T.dive[0] - 0.1, { dur: 0.6, gain: 0.4 });
+    k.play('stamp', 47.86, { gain: 0.25 });
+    k.play('swish', 48.85, { dur: 0.3, gain: 0.3 }); pluck(50.08, 'C5', 0.5); pluck(50.15, 'G5', 0.4);
+    k.play('swish', 51.14, { dur: 0.3, gain: 0.3 }); pluck(52.18, 'D5', 0.5); pluck(52.25, 'A5', 0.4);
+    whoosh(T.whip2[0], 0.45, 0.6, 2200);
+    soft(54.25, 0.4); k.play('stamp', 56.78, { gain: 0.28 });
+    k.play('swish', 57.7, { dur: 0.25, gain: 0.3 });
+    STEPS.forEach(([ts], i) => { k.play('tock', ts + 0.1, { f: 300 + i * 60, gain: 0.35 }); pluck(ts + 0.12, ['C5', 'E5', 'G5', 'C6'][i], 0.4); });
+    whoosh(T.whip3[0], 0.45, 0.6, 2200);
+    soft(61.5, 0.4);
+    for (let tt = 61.7; tt < 63.6; tt += 0.11) k.play('tick', tt, { f: 4200, gain: 0.1 });
+    k.play('stamp', 63.8, { gain: 0.25 });
+    k.play('sparkle', 64.75, { gain: 0.3, n: 5 });
+    [66.22, 66.72].forEach((tt, i) => pluck(tt, ['E5', 'G5'][i], 0.4));
+    for (let i = 0; i < 8; i++) clink(65.3 + i * 0.32, 0.35);
+    k.play('impact', 67.06, { gain: 0.3 });
+    ['C4', 'G4', 'C5', 'E5', 'G5'].forEach((n, i) => k.tone(67.08 + i * 0.012, { f: n, type: 'triangle', dur: 1.4, gain: 0.03, a: 0.02, verb: 0.3 }));
+    k.play('sparkle', 67.2, { gain: 0.3, n: 6 });
+  }
+
+  window.FV = { explainer: explainerV, scoreSound: scoreSoundV, DURATION: DUR, W: PW, H: PH };
+})();
+
+</script>
+<script>
+const BEATS = [
+  { name: 'Hook', t0: 0, t1: 4.6, key: 3.3,
+    text: '"YOU\'RE NOT PAID / FOR YOUR TIME" (124 px) → "YOU\'RE PAID FOR HOW / REPLACEABLE / YOU ARE".',
+    flow: ['cont', 'Frame 0 opens punched-in on a big alarm clock with the first words already on screen and a short camera shake. On "time" a red X stamps the clock. On "you\'re paid" the clock flies off and a character pops in; on "replaceable" they slide out and an identical grey look-alike slides into their place, then two more peek in.'],
+    sound: 'Soft low hit + swish on frame 0, a light stamp on "time", a whoosh as the clock flies off, a swish for the swap.' },
+  { name: 'Effort is not what gets paid', t0: 4.6, t1: 10.95, key: 10.5,
+    text: '"MOST PEOPLE BELIEVE / TO EARN MORE" → "WORK HARDER? / OR LONGER?" → "THE MARKET / DOESN\'T PAY FOR / EFFORT".',
+    flow: ['cont', 'The camera pulls back to a row of five workers in hard hats with spinning clocks. On "harder" they work faster and sweat; on "longer" the clocks race and the sky dips toward night. On "effort" the row dims, a big sweat drop labelled EFFORT pops up and gets a red X.'],
+    sound: 'Soft pops as the row appears, fast quiet clock ticks under "harder / longer", a light stamp on "effort".' },
+  { name: 'What is hard to replace', t0: 10.95, t1: 13.15, key: 12.6,
+    text: '"IT PAYS FOR WHAT\'S / HARD TO / REPLACE" (cyan).',
+    flow: ['cont', 'Whip-tilt down to a big glowing gem rising with coins orbiting it; it flashes and bursts with sparkles on "hard to replace".'],
+    sound: 'Whoosh down, a few coin clinks, a soft sparkle on "hard".' },
+  { name: 'Two people, same company', t0: 13.15, t1: 22.8, key: 21.95,
+    text: '"TWO PEOPLE / SAME COMPANY" → "ONE DOES EXACTLY / WHAT THE JOB / DESCRIPTION SAYS" → "IF THEY LEFT / SOMEONE NEW / BY NEXT WEEK".',
+    flow: ['cut', 'Scene change: a giant planet sweeps past as the wipe (the style\'s own move) into a new place. Two people pop in, then their company tower. The camera pushes in on person A: a job-description clipboard ticks off three items. On "left" A slides out; on "someone new" a grey look-alike slides in; a "+7 DAYS" calendar pops on "next week".'],
+    sound: 'Planet whoosh, soft pops for the two people, three quiet ticks for the checklist, swishes out and in, a paper flip for the calendar.' },
+  { name: 'The one they can\'t replace', t0: 22.8, t1: 31.2, key: 29.95,
+    text: '"THE OTHER / UNDERSTANDS / CUSTOMERS" → "SOLVES PROBLEMS / NOBODY ELSE / CAN" → "IF THEY LEFT / THE COMPANY / FEELS IT".',
+    flow: ['cont', 'The camera pans across to person B (gold shirt): heart bubbles pop around them for customers, a lightbulb switches on for solved problems. On "left" B slides out leaving a dashed empty spot with "?"; the camera pulls back as the tower shakes, cracks, and its alarm flashes red. White flash on "immediately".'],
+    sound: 'Three soft plucks for the hearts, a small ding for the lightbulb, a swish out, a quiet alarm pulse, one soft impact on "immediately".' },
+  { name: 'Same hours, only one has leverage', t0: 31.2, t1: 35.1, key: 34.4,
+    text: '"SAME / HOURS" → "ONLY ONE / HAS / LEVERAGE" (gold, biggest word so far).',
+    flow: ['cont', 'B comes back and the tower shrinks away. A clock pops over each person: same hours. Then a lever appears under B: B steps onto the long arm and a heavy stack of coins rises on the short arm, flashing gold on "leverage".'],
+    sound: 'Soft pop for the clocks, a tock as the lever lands, a low creak as it tips, sparkle + coin clinks on "leverage".' },
+  { name: 'What sets your pay', t0: 35.1, t1: 44.7, key: 43.95,
+    text: '"EASY TO REPLACE / PAY SET BY / THE CHEAPEST" → "HARD TO REPLACE / SET BY WHAT / IT WOULD COST / TO LOSE YOU".',
+    flow: ['cut', 'Whip-pan (speed lines) to a queue of look-alikes with price tags $$$$ to $. On "cheapest" the $ tag glows red, a dotted arrow runs to a YOUR PAY bar and the bar drains. Then the camera tilts down: B with a gem badge, a small cracked tower beside them, and their YOUR PAY bar fills past the end on "cost to lose you".'],
+    sound: 'Fast whoosh, soft pops for the queue, ticks as the tags land, a falling tone as pay drains, a rising tone + sparkle as it overfills.' },
+  { name: 'Rarely just one skill', t0: 44.7, t1: 53.7, key: 52.8,
+    text: '"THE MOST / VALUABLE / PEOPLE" → "RARELY HAVE / JUST ONE / SKILL" → "A DESIGNER / WHO UNDERSTANDS / SALES" → "AN ENGINEER / WHO CAN EXPLAIN / IDEAS CLEARLY".',
+    flow: ['cut', 'Scene change: the camera dives into B\'s gem in a white-cyan glow and comes out on a single pink skill orb (pen), which gets a red X on "one skill". It splits into two overlapping orbs, DESIGN + SALES, and the overlap lights up gold with a star: RARE MIX. On "engineer" the orbs flip into ENGINEERING (gear) + EXPLAINING (speech bubble).'],
+    sound: 'Riser into the dive, a light stamp on "skill", a swish + two-note pluck on "sales" and again on "explain".' },
+  { name: 'Not overnight, one step at a time', t0: 53.7, t1: 61.2, key: 60.9,
+    text: '"HARD TO REPLACE / DOESN\'T HAPPEN / OVERNIGHT" → "ONE SKILL / ONE SOLVED PROBLEM / AT A TIME".',
+    flow: ['cut', 'Vertical whip to a crescent moon with a sleeper on it; a red X lands on "overnight". The moon slides away and a staircase builds itself one block at a time (SKILL, PROBLEM, SKILL, PROBLEM), each block landing on its spoken word while the character hops up to the newest step.'],
+    sound: 'Whoosh, soft pop, a light stamp on "overnight", a tock + rising pluck for each block.' },
+  { name: 'Worth more', t0: 61.2, t1: 68.4, key: 67.9,
+    text: '"BECOMING WEALTHY / ISN\'T ABOUT / MORE HOURS" → "BECOME THE PERSON / WHOSE HOURS ARE / WORTH MORE" (gold, held to the end).',
+    flow: ['cut', 'A vertical whip up past the top of the stairs lands on a horizon planet. A big clock spins through extra hours over a tired character; "+ MORE HOURS" gets crossed out. On "becoming the person" the clock turns into a gold $ clock, coins pop, and a price tag climbs $ / HR → $$$$ / HR in step with "hours… are… worth more". Flare, burst and shake on "worth"; held about 1 s.'],
+    sound: 'Whoosh, quick quiet ticks for the spinning clock, a light stamp on "more hours", sparkle as it turns gold, coin clinks, a soft impact + warm chord on "worth more".' },
+];
+const fmt = (s) => s.toFixed(2).replace(/\.?0+$/, '') + ' s';
+(async () => {
+  for (const f of ['900 64px "Nunito"', '700 28px "Nunito"', '600 32px "Fredoka"']) { try { await document.fonts.load(f, 'AaZz09$'); } catch (e) {} }
+  const grid = document.getElementById('grid');
+  BEATS.forEach((b, i) => {
+    const el = document.createElement('article'); el.className = 'beat';
+    const cv = document.createElement('canvas'); cv.width = 1080; cv.height = 1920; el.appendChild(cv);
+    const n = document.createElement('div'); n.className = 'notes';
+    n.innerHTML = `<div class="head"><span class="num">${i + 1}</span><span class="name"></span><span class="time">${fmt(b.t0)} – ${fmt(b.t1)} · frame ${fmt(b.key)}</span></div>
+      <dl><dt>On screen</dt><dd class="tx"></dd><dt>${i ? 'From ' + i : 'Opening'}</dt><dd><span class="tag ${b.flow[0] === 'cut' ? 'cut' : ''}">${b.flow[0] === 'cut' ? 'Scene change' : 'Continuous'}</span><span class="fl"></span></dd><dt>Sound</dt><dd class="sd"></dd></dl>`;
+    n.querySelector('.name').textContent = b.name; n.querySelector('.tx').textContent = b.text; n.querySelector('.fl').textContent = b.flow[1]; n.querySelector('.sd').textContent = b.sound;
+    el.appendChild(n); grid.appendChild(el);
+    FV.explainer(cv.getContext('2d'), 1080, 1920, b.key);
+  });
+})();
+</script>

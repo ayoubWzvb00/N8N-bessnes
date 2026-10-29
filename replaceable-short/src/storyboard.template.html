@@ -1,0 +1,122 @@
+<title>Replaceable Short Storyboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700;900&display=block">
+<style>
+  /* Layout: a production storyboard sheet; two-column grid of 16:9 key frames, notes under each. Single deliberate dark look matching the piece. */
+  :root {
+    --bg: #0d0f33; --panel: #17154a; --line: #2e2a6e; --fg: #eeeaff; --muted: #b3aade; --gold: #ffd23f; --cyan: #7ff0ff; --pink: #ff8fb8;
+    --display: "Nunito", "Fredoka", system-ui, sans-serif; --body: "Nunito", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding-block: 32px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  header.top { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; justify-content: space-between; margin-bottom: 24px; }
+  h1 { font-family: var(--display); font-weight: 900; font-size: clamp(26px, 4vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; }
+  h1 em { color: var(--gold); font-style: normal; }
+  .meta { color: var(--muted); font-weight: 700; letter-spacing: 0.04em; font-size: 13px; text-transform: uppercase; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 24px; }
+  .beat { background: var(--panel); border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+  .beat canvas { width: 100%; height: auto; aspect-ratio: 9 / 16; display: block; background: #090b2c; }
+  .notes { padding: 14px 18px 18px; display: grid; gap: 8px; }
+  .head { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+  .num { font-family: var(--display); font-weight: 900; font-size: 22px; color: var(--gold); }
+  .name { font-weight: 900; font-size: 17px; }
+  .time { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--cyan); font-weight: 700; font-size: 13px; }
+  dl { margin: 0; display: grid; grid-template-columns: 1fr; gap: 6px 12px; }
+  dt { color: var(--muted); font-weight: 700; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; padding-top: 6px; }
+  dd { margin: 0; min-width: 0; }
+  dd q { quotes: none; font-weight: 900; color: #fff; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; padding: 1px 8px; border-radius: 99px; margin-right: 6px; background: var(--line); color: var(--cyan); }
+  .tag.cut { color: var(--pink); }
+  .assume { margin-top: 32px; background: var(--panel); border-radius: 18px; padding: 18px 22px; }
+  .assume h2 { font-family: var(--display); font-size: 20px; margin: 0 0 8px; }
+  .assume ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+  .assume b { color: var(--gold); }
+  @media (max-width: 520px) { dl { grid-template-columns: 1fr; } dt { padding-top: 6px; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>You're paid for how <em>replaceable</em> you are</h1>
+    <div class="meta">Flat-Vector Science · 9:16 TikTok · storyboard · 9 beats · 68 s</div>
+  </header>
+  <div class="grid" id="grid"></div>
+  <section class="assume">
+    <h2>Notes and assumptions</h2>
+    <ul>
+      <li><b>Timing comes from your voice track.</b> I transcribed it with word timestamps; every headline word lands on the frame it is spoken. Length is 68.4 s (voice 68.0 s plus a short hold).</li>
+      <li><b>On-screen text:</b> English, key lines only (no full captions), keywords coloured: gold = value, red = the trap, cyan = hard to replace.</li>
+      <li><b>Safe zones:</b> headlines sit between y 230 and 650 of 1920 and subjects in the middle; the bottom fifth and right edge stay clear for TikTok's caption and buttons.</li>
+      <li><b>Sound:</b> voice first. Effects only (no music), short and quiet, and ducked under the voice in the final mix; I'll check the levels with a meter before delivering.</li>
+      <li><b>Illustrative, not data:</b> the price tags ($ to $$$$) and the "+7 DAYS" calendar illustrate the script's ideas; no salary figures are claimed.</li>
+      <li>Hook: the very first frame already shows the clock and "YOU'RE NOT PAID", so the thumbnail and the first swipe both carry the hook.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+/*HARNESS*/
+</script>
+<script>
+/*BASE*/
+/*SCENES*/
+</script>
+<script>
+const BEATS = [
+  { name: 'Hook', t0: 0, t1: 4.6, key: 3.3,
+    text: '"YOU\'RE NOT PAID / FOR YOUR TIME" (124 px) → "YOU\'RE PAID FOR HOW / REPLACEABLE / YOU ARE".',
+    flow: ['cont', 'Frame 0 opens punched-in on a big alarm clock with the first words already on screen and a short camera shake. On "time" a red X stamps the clock. On "you\'re paid" the clock flies off and a character pops in; on "replaceable" they slide out and an identical grey look-alike slides into their place, then two more peek in.'],
+    sound: 'Soft low hit + swish on frame 0, a light stamp on "time", a whoosh as the clock flies off, a swish for the swap.' },
+  { name: 'Effort is not what gets paid', t0: 4.6, t1: 10.95, key: 10.5,
+    text: '"MOST PEOPLE BELIEVE / TO EARN MORE" → "WORK HARDER? / OR LONGER?" → "THE MARKET / DOESN\'T PAY FOR / EFFORT".',
+    flow: ['cont', 'The camera pulls back to a row of five workers in hard hats with spinning clocks. On "harder" they work faster and sweat; on "longer" the clocks race and the sky dips toward night. On "effort" the row dims, a big sweat drop labelled EFFORT pops up and gets a red X.'],
+    sound: 'Soft pops as the row appears, fast quiet clock ticks under "harder / longer", a light stamp on "effort".' },
+  { name: 'What is hard to replace', t0: 10.95, t1: 13.15, key: 12.6,
+    text: '"IT PAYS FOR WHAT\'S / HARD TO / REPLACE" (cyan).',
+    flow: ['cont', 'Whip-tilt down to a big glowing gem rising with coins orbiting it; it flashes and bursts with sparkles on "hard to replace".'],
+    sound: 'Whoosh down, a few coin clinks, a soft sparkle on "hard".' },
+  { name: 'Two people, same company', t0: 13.15, t1: 22.8, key: 21.95,
+    text: '"TWO PEOPLE / SAME COMPANY" → "ONE DOES EXACTLY / WHAT THE JOB / DESCRIPTION SAYS" → "IF THEY LEFT / SOMEONE NEW / BY NEXT WEEK".',
+    flow: ['cut', 'Scene change: a giant planet sweeps past as the wipe (the style\'s own move) into a new place. Two people pop in, then their company tower. The camera pushes in on person A: a job-description clipboard ticks off three items. On "left" A slides out; on "someone new" a grey look-alike slides in; a "+7 DAYS" calendar pops on "next week".'],
+    sound: 'Planet whoosh, soft pops for the two people, three quiet ticks for the checklist, swishes out and in, a paper flip for the calendar.' },
+  { name: 'The one they can\'t replace', t0: 22.8, t1: 31.2, key: 29.95,
+    text: '"THE OTHER / UNDERSTANDS / CUSTOMERS" → "SOLVES PROBLEMS / NOBODY ELSE / CAN" → "IF THEY LEFT / THE COMPANY / FEELS IT".',
+    flow: ['cont', 'The camera pans across to person B (gold shirt): heart bubbles pop around them for customers, a lightbulb switches on for solved problems. On "left" B slides out leaving a dashed empty spot with "?"; the camera pulls back as the tower shakes, cracks, and its alarm flashes red. White flash on "immediately".'],
+    sound: 'Three soft plucks for the hearts, a small ding for the lightbulb, a swish out, a quiet alarm pulse, one soft impact on "immediately".' },
+  { name: 'Same hours, only one has leverage', t0: 31.2, t1: 35.1, key: 34.4,
+    text: '"SAME / HOURS" → "ONLY ONE / HAS / LEVERAGE" (gold, biggest word so far).',
+    flow: ['cont', 'B comes back and the tower shrinks away. A clock pops over each person: same hours. Then a lever appears under B: B steps onto the long arm and a heavy stack of coins rises on the short arm, flashing gold on "leverage".'],
+    sound: 'Soft pop for the clocks, a tock as the lever lands, a low creak as it tips, sparkle + coin clinks on "leverage".' },
+  { name: 'What sets your pay', t0: 35.1, t1: 44.7, key: 43.95,
+    text: '"EASY TO REPLACE / PAY SET BY / THE CHEAPEST" → "HARD TO REPLACE / SET BY WHAT / IT WOULD COST / TO LOSE YOU".',
+    flow: ['cut', 'Whip-pan (speed lines) to a queue of look-alikes with price tags $$$$ to $. On "cheapest" the $ tag glows red, a dotted arrow runs to a YOUR PAY bar and the bar drains. Then the camera tilts down: B with a gem badge, a small cracked tower beside them, and their YOUR PAY bar fills past the end on "cost to lose you".'],
+    sound: 'Fast whoosh, soft pops for the queue, ticks as the tags land, a falling tone as pay drains, a rising tone + sparkle as it overfills.' },
+  { name: 'Rarely just one skill', t0: 44.7, t1: 53.7, key: 52.8,
+    text: '"THE MOST / VALUABLE / PEOPLE" → "RARELY HAVE / JUST ONE / SKILL" → "A DESIGNER / WHO UNDERSTANDS / SALES" → "AN ENGINEER / WHO CAN EXPLAIN / IDEAS CLEARLY".',
+    flow: ['cut', 'Scene change: the camera dives into B\'s gem in a white-cyan glow and comes out on a single pink skill orb (pen), which gets a red X on "one skill". It splits into two overlapping orbs, DESIGN + SALES, and the overlap lights up gold with a star: RARE MIX. On "engineer" the orbs flip into ENGINEERING (gear) + EXPLAINING (speech bubble).'],
+    sound: 'Riser into the dive, a light stamp on "skill", a swish + two-note pluck on "sales" and again on "explain".' },
+  { name: 'Not overnight, one step at a time', t0: 53.7, t1: 61.2, key: 60.9,
+    text: '"HARD TO REPLACE / DOESN\'T HAPPEN / OVERNIGHT" → "ONE SKILL / ONE SOLVED PROBLEM / AT A TIME".',
+    flow: ['cut', 'Vertical whip to a crescent moon with a sleeper on it; a red X lands on "overnight". The moon slides away and a staircase builds itself one block at a time (SKILL, PROBLEM, SKILL, PROBLEM), each block landing on its spoken word while the character hops up to the newest step.'],
+    sound: 'Whoosh, soft pop, a light stamp on "overnight", a tock + rising pluck for each block.' },
+  { name: 'Worth more', t0: 61.2, t1: 68.4, key: 67.9,
+    text: '"BECOMING WEALTHY / ISN\'T ABOUT / MORE HOURS" → "BECOME THE PERSON / WHOSE HOURS ARE / WORTH MORE" (gold, held to the end).',
+    flow: ['cut', 'A vertical whip up past the top of the stairs lands on a horizon planet. A big clock spins through extra hours over a tired character; "+ MORE HOURS" gets crossed out. On "becoming the person" the clock turns into a gold $ clock, coins pop, and a price tag climbs $ / HR → $$$$ / HR in step with "hours… are… worth more". Flare, burst and shake on "worth"; held about 1 s.'],
+    sound: 'Whoosh, quick quiet ticks for the spinning clock, a light stamp on "more hours", sparkle as it turns gold, coin clinks, a soft impact + warm chord on "worth more".' },
+];
+const fmt = (s) => s.toFixed(2).replace(/\.?0+$/, '') + ' s';
+(async () => {
+  for (const f of ['900 64px "Nunito"', '700 28px "Nunito"', '600 32px "Fredoka"']) { try { await document.fonts.load(f, 'AaZz09$'); } catch (e) {} }
+  const grid = document.getElementById('grid');
+  BEATS.forEach((b, i) => {
+    const el = document.createElement('article'); el.className = 'beat';
+    const cv = document.createElement('canvas'); cv.width = 1080; cv.height = 1920; el.appendChild(cv);
+    const n = document.createElement('div'); n.className = 'notes';
+    n.innerHTML = `<div class="head"><span class="num">${i + 1}</span><span class="name"></span><span class="time">${fmt(b.t0)} – ${fmt(b.t1)} · frame ${fmt(b.key)}</span></div>
+      <dl><dt>On screen</dt><dd class="tx"></dd><dt>${i ? 'From ' + i : 'Opening'}</dt><dd><span class="tag ${b.flow[0] === 'cut' ? 'cut' : ''}">${b.flow[0] === 'cut' ? 'Scene change' : 'Continuous'}</span><span class="fl"></span></dd><dt>Sound</dt><dd class="sd"></dd></dl>`;
+    n.querySelector('.name').textContent = b.name; n.querySelector('.tx').textContent = b.text; n.querySelector('.fl').textContent = b.flow[1]; n.querySelector('.sd').textContent = b.sound;
+    el.appendChild(n); grid.appendChild(el);
+    FV.explainer(cv.getContext('2d'), 1080, 1920, b.key);
+  });
+})();
+</script>
