@@ -1,68 +1,5 @@
-<title>Replaceable Short Storyboard</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700;900&display=block">
-<style>
-  /* Layout: a production storyboard sheet; two-column grid of 16:9 key frames, notes under each. Single deliberate dark look matching the piece. */
-  :root {
-    --bg: #0d0f33; --panel: #17154a; --line: #2e2a6e; --fg: #eeeaff; --muted: #b3aade; --gold: #ffd23f; --cyan: #7ff0ff; --pink: #ff8fb8;
-    --display: "Nunito", "Fredoka", system-ui, sans-serif; --body: "Nunito", system-ui, sans-serif;
-    color-scheme: dark;
-  }
-  body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; }
-  .wrap { max-width: 1240px; margin: 0 auto; padding-block: 32px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-  header.top { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; justify-content: space-between; margin-bottom: 24px; }
-  h1 { font-family: var(--display); font-weight: 900; font-size: clamp(26px, 4vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; }
-  h1 em { color: var(--gold); font-style: normal; }
-  .meta { color: var(--muted); font-weight: 700; letter-spacing: 0.04em; font-size: 13px; text-transform: uppercase; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 24px; }
-  .beat { background: var(--panel); border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
-  .beat canvas { width: 100%; height: auto; aspect-ratio: 9 / 16; display: block; background: #090b2c; }
-  .notes { padding: 14px 18px 18px; display: grid; gap: 8px; }
-  .head { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
-  .num { font-family: var(--display); font-weight: 900; font-size: 22px; color: var(--gold); }
-  .name { font-weight: 900; font-size: 17px; }
-  .time { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--cyan); font-weight: 700; font-size: 13px; }
-  dl { margin: 0; display: grid; grid-template-columns: 1fr; gap: 6px 12px; }
-  dt { color: var(--muted); font-weight: 700; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; padding-top: 6px; }
-  dd { margin: 0; min-width: 0; }
-  dd q { quotes: none; font-weight: 900; color: #fff; }
-  .tag { display: inline-block; font-size: 11px; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; padding: 1px 8px; border-radius: 99px; margin-right: 6px; background: var(--line); color: var(--cyan); }
-  .tag.cut { color: var(--pink); }
-  .assume { margin-top: 32px; background: var(--panel); border-radius: 18px; padding: 18px 22px; }
-  .assume h2 { font-family: var(--display); font-size: 20px; margin: 0 0 8px; }
-  .assume ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
-  .assume b { color: var(--gold); }
-  @media (max-width: 520px) { dl { grid-template-columns: 1fr; } dt { padding-top: 6px; } }
-</style>
-
-<div class="wrap">
-  <header class="top">
-    <h1>You're paid for how <em>replaceable</em> you are</h1>
-    <div class="meta">Flat-Vector Science · 9:16 TikTok · storyboard · 9 beats · 68 s</div>
-  </header>
-  <div class="grid" id="grid"></div>
-  <section class="assume">
-    <h2>Notes and assumptions</h2>
-    <ul>
-      <li><b>Timing comes from your voice track.</b> I transcribed it with word timestamps; every headline word lands on the frame it is spoken. Length is 68.4 s (voice 68.0 s plus a short hold).</li>
-      <li><b>On-screen text:</b> English, key lines only (no full captions), keywords coloured: gold = value, red = the trap, cyan = hard to replace.</li>
-      <li><b>Safe zones:</b> headlines sit between y 230 and 650 of 1920 and subjects in the middle; the bottom fifth and right edge stay clear for TikTok's caption and buttons.</li>
-      <li><b>Sound:</b> voice first. Effects only (no music), short and quiet, and ducked under the voice in the final mix; I'll check the levels with a meter before delivering.</li>
-      <li><b>Illustrative, not data:</b> the price tags ($ to $$$$) and the "+7 DAYS" calendar illustrate the script's ideas; no salary figures are claimed.</li>
-      <li>Hook: the very first frame already shows the clock and "YOU'RE NOT PAID", so the thumbnail and the first swipe both carry the hook.</li>
-    </ul>
-  </section>
-</div>
-
-<script>
-/*HARNESS*/
-</script>
-<script>
-/*BASE*/
-/*SCENES*/
-</script>
-<script>
-const BEATS = [
+// Storyboard beats for this short: one entry per beat, key = the frame time shown in the panel.
+window.BEATS = [
   { name: 'Hook', t0: 0, t1: 4.6, key: 3.3,
     text: '"YOU\'RE NOT PAID / FOR YOUR TIME" (124 px) → "YOU\'RE PAID FOR HOW / REPLACEABLE / YOU ARE".',
     flow: ['cont', 'Frame 0 opens punched-in on a big alarm clock with the first words already on screen and a short camera shake. On "time" a red X stamps the clock. On "you\'re paid" the clock flies off and a character pops in; on "replaceable" they slide out and an identical grey look-alike slides into their place, then two more peek in.'],
@@ -104,19 +41,12 @@ const BEATS = [
     flow: ['cut', 'A vertical whip up past the top of the stairs lands on a horizon planet. A big clock spins through extra hours over a tired character; "+ MORE HOURS" gets crossed out. On "becoming the person" the clock turns into a gold $ clock, coins pop, and a price tag climbs $ / HR → $$$$ / HR in step with "hours… are… worth more". Flare, burst and shake on "worth"; held about 1 s.'],
     sound: 'Whoosh, quick quiet ticks for the spinning clock, a light stamp on "more hours", sparkle as it turns gold, coin clinks, a soft impact + warm chord on "worth more".' },
 ];
-const fmt = (s) => s.toFixed(2).replace(/\.?0+$/, '') + ' s';
-(async () => {
-  for (const f of ['900 64px "Nunito"', '700 28px "Nunito"', '600 32px "Fredoka"']) { try { await document.fonts.load(f, 'AaZz09$'); } catch (e) {} }
-  const grid = document.getElementById('grid');
-  BEATS.forEach((b, i) => {
-    const el = document.createElement('article'); el.className = 'beat';
-    const cv = document.createElement('canvas'); cv.width = 1080; cv.height = 1920; el.appendChild(cv);
-    const n = document.createElement('div'); n.className = 'notes';
-    n.innerHTML = `<div class="head"><span class="num">${i + 1}</span><span class="name"></span><span class="time">${fmt(b.t0)} – ${fmt(b.t1)} · frame ${fmt(b.key)}</span></div>
-      <dl><dt>On screen</dt><dd class="tx"></dd><dt>${i ? 'From ' + i : 'Opening'}</dt><dd><span class="tag ${b.flow[0] === 'cut' ? 'cut' : ''}">${b.flow[0] === 'cut' ? 'Scene change' : 'Continuous'}</span><span class="fl"></span></dd><dt>Sound</dt><dd class="sd"></dd></dl>`;
-    n.querySelector('.name').textContent = b.name; n.querySelector('.tx').textContent = b.text; n.querySelector('.fl').textContent = b.flow[1]; n.querySelector('.sd').textContent = b.sound;
-    el.appendChild(n); grid.appendChild(el);
-    FV.explainer(cv.getContext('2d'), 1080, 1920, b.key);
-  });
-})();
-</script>
+
+window.SB = {
+  headline: "You're paid for how <em>replaceable</em> you are",
+  notes: [
+    '<b>Timing comes from your voice track.</b> I transcribed it with word timestamps; every headline word lands on the frame it is spoken. Length is 68.4 s (voice 68.0 s plus a short hold).',
+    '<b>On-screen text:</b> English, key lines only (no full captions), keywords coloured: gold = value, red = the trap, cyan = hard to replace.', "<b>Safe zones:</b> headlines sit between y 230 and 650 of 1920 and subjects in the middle; the bottom fifth and right edge stay clear for TikTok's caption and buttons.", "<b>Sound:</b> voice first. Effects only (no music), short and quiet, and ducked under the voice in the final mix; I'll check the levels with a meter before delivering.", '<b>Illustrative, not data:</b> the price tags ($ to $$$$) and the "+7 DAYS" calendar illustrate the script\'s ideas; no salary figures are claimed.',
+    'Hook: the very first frame already shows the clock and "YOU\'RE NOT PAID", so the thumbnail and the first swipe both carry the hook.',
+  ],
+};

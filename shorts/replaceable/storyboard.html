@@ -1,4 +1,4 @@
-<title>Replaceable Short Storyboard</title>
+<title>Replaceable Storyboard</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700;900&display=block">
 <style>
@@ -37,20 +37,13 @@
 
 <div class="wrap">
   <header class="top">
-    <h1>You're paid for how <em>replaceable</em> you are</h1>
-    <div class="meta">Flat-Vector Science · 9:16 TikTok · storyboard · 9 beats · 68 s</div>
+    <h1 id="sbh"></h1>
+    <div class="meta" id="sbm"></div>
   </header>
   <div class="grid" id="grid"></div>
   <section class="assume">
     <h2>Notes and assumptions</h2>
-    <ul>
-      <li><b>Timing comes from your voice track.</b> I transcribed it with word timestamps; every headline word lands on the frame it is spoken. Length is 68.4 s (voice 68.0 s plus a short hold).</li>
-      <li><b>On-screen text:</b> English, key lines only (no full captions), keywords coloured: gold = value, red = the trap, cyan = hard to replace.</li>
-      <li><b>Safe zones:</b> headlines sit between y 230 and 650 of 1920 and subjects in the middle; the bottom fifth and right edge stay clear for TikTok's caption and buttons.</li>
-      <li><b>Sound:</b> voice first. Effects only (no music), short and quiet, and ducked under the voice in the final mix; I'll check the levels with a meter before delivering.</li>
-      <li><b>Illustrative, not data:</b> the price tags ($ to $$$$) and the "+7 DAYS" calendar illustrate the script's ideas; no salary figures are claimed.</li>
-      <li>Hook: the very first frame already shows the clock and "YOU'RE NOT PAID", so the thumbnail and the first swipe both carry the hook.</li>
-    </ul>
+    <ul id="sbn"></ul>
   </section>
 </div>
 
@@ -721,9 +714,10 @@
   function header(x, a) { pill(x, 206, 44, 'Money while you sleep', 28, { a, bg: 'rgba(255,255,255,0.95)' }); }
 
 
-  // ================= 9:16 SHORT: "You're paid for how replaceable you are" =================
-  // Continues the closure opened in base.js. Logical canvas is 1080 x 1920; times come from the voice track (words.json).
-  const PW = 1080, PH = 1920, DUR = 68.4;
+  // ================= 9:16 VERTICAL TOOLKIT (shared by every short) =================
+  // Continues the closure opened in base.js; the project's scenes.js continues it and closes it.
+  // Logical canvas is 1080 x 1920. A project sets its own DUR (voice length + ~0.4 s hold).
+  const PW = 1080, PH = 1920;
   const GREY = ['#ecebff', '#aaa6d6', '#4a3f8c'], GREY_SHIRT = ['#8f89c6', '#4e4886'];
   const GOLD_SHIRT = ['#ffd23f', '#d98d1a'];
   const RUBY = ['#ffb0c4', '#ff3b5c', '#8c1238'];
@@ -975,13 +969,18 @@
   }
   const cloneOpt = { pal: GREY, shirt: GREY_SHIRT, lid: '#b9b4e2' };
 
+
+  // ================= PROJECT: "You're paid for how replaceable you are" (the reference short) =================
+  // Continues the closure from shorts-kit/lib/base.js + vertical.js. All times are seconds on voice.mp3 (see words.json).
+  const DUR = 68.4;
+
   // ================= TIMELINE (seconds on the voice track) =================
   const T = {
     sweep: [13.15, 13.85], whip1: [34.95, 35.32], dive: [44.2, 44.72], whip2: [53.45, 53.92], whip3: [61.0, 61.42],
   };
   // headlines: only the lines that carry the idea, each word lands as it is spoken
   hl(0, 1.85, 470, 124, "YOU'RE@-1 NOT@-1 PAID@-1|FOR@0.7 YOUR@0.9 TIME@1.04#g*1.15");
-  hl(1.92, 4.5, 430, 100, "YOU'RE@1.92 PAID@2.14 FOR@2.42 HOW@2.62|REPLACEABLE@2.8#r*1.25|YOU@3.56 ARE@3.78");
+  hl(1.92, 4.5, 430, 100, "YOU'RE@1.92 PAID@2.14 FOR@2.42 HOW@2.62|REPLACEABLE@2.8#r*1.15|YOU@3.56 ARE@3.78");
   hl(4.7, 6.85, 430, 100, "MOST@4.7 PEOPLE@4.92 BELIEVE@5.18|TO@5.86 EARN@6.0#g MORE@6.24#g");
   hl(6.96, 8.6, 450, 116, "WORK@6.96 HARDER?@7.14#g|OR@7.54 LONGER?@7.86#g");
   hl(8.72, 10.95, 420, 104, "THE@8.96 MARKET@9.08|DOESN'T@9.36 PAY@9.74 FOR@10.0|EFFORT@10.2#r*1.3");
@@ -1012,22 +1011,28 @@
     const c = camAt(t, [[0, 540, 1150, 1.0, 0], [1.9, 540, 1150, 1.0, 0.3], [4.6, 540, 1220, 0.95, 0.55], [8.65, 540, 1180, 1.0, 0.4], [10.95, 540, 2200, 1.0, 0.38]]);
     const night = seg(t, 7.6, 8.2) * (1 - seg(t, 8.7, 9.2));
     skyP(x, t, { x: c[0] * 0.3, y: c[1] * 0.25, z: c[2], red: 0.35 * night });
-    x.save(); camApply(x, t, c, { punch: punchK(t, [0, 1.04, 2.8, 6.96, 7.86, 10.2, 12.1]) * (1 + 0.25 * (1 - eo(seg(t, 0, 0.35)))), shake: shakeK(t, [0.02, 1.04, 10.2], 18) });
+    x.save(); camApply(x, t, c, { punch: punchK(t, [0, 1.04, 2.8, 3.56, 6.96, 7.86, 10.2, 12.1], 0.08) * (1 + 0.03 * seg(t, 1.9, 4.5)), shake: shakeK(t, [0.02, 1.04, 2.8, 10.2], 20) });
     planet(x, 140, 820, 60, PL.coral, { glowA: 0.25 });
     planet(x, 960, 1650, 46, PL.moon);
-    // the hook clock: "you're not paid for your time"
-    const cOut = eio(seg(t, 1.9, 2.25));
+    // the hook clock: slams in huge with a shockwave, hands racing, until "time" stamps it out
+    const cOut = eio(seg(t, 1.9, 2.25)), cIn = eo(seg(t, 0, 0.3)), stop = t >= 1.04;
+    if (t < 0.6) { const u = seg(t, 0, 0.6); x.save(); x.globalAlpha = 1 - u; x.strokeStyle = '#ffffff'; x.lineWidth = 26 * (1 - u) + 4; x.beginPath(); x.arc(540, 1150, 250 + 700 * eo(u), 0, TAU); x.stroke(); x.restore(); }
+    if (t > 1.04 && t < 1.7) { const u = seg(t, 1.04, 1.7); x.save(); x.globalAlpha = 1 - u; x.strokeStyle = C.red; x.lineWidth = 20 * (1 - u) + 4; x.beginPath(); x.arc(540, 1150, 260 + 600 * eo(u), 0, TAU); x.stroke(); x.restore(); }
     if (cOut < 1) {
-      alarmClock(x, lerp(540, 1250, cOut), lerp(1150, 700, cOut), 230 * (1 - 0.4 * cOut), { t, ring: t < 1.0 ? 0.6 : 0, h: 9 + t * 3 });
-      stampX(x, 700, 980, 80, back(seg(t, 1.04, 1.3), 2.2) * (1 - cOut));
+      const shake = stop && t < 1.5 ? Math.sin(t * 90) * 0.08 * (1 - seg(t, 1.04, 1.5)) : 0;
+      x.save(); x.translate(lerp(540, 1250, cOut), lerp(1150, 700, cOut)); x.rotate(shake + cOut * 0.8);
+      alarmClock(x, 0, 0, 240 * lerp(1.45, 1, cIn) * (1 - 0.4 * cOut), { t, ring: stop ? 0 : 0.8, h: stop ? 9 + 1.04 * 14 : 9 + t * 14 });
+      x.restore();
+      if (stop) glow(x, 540, 1150, 420, C.red, 0.35 * (1 - seg(t, 1.04, 1.8)) * (1 - cOut));
+      stampX(x, 730, 960, 110, back(seg(t, 1.04, 1.28), 2.4) * (1 - cOut));
     }
-    // the person, swapped for a clone on "replaceable"
-    const pin = back(seg(t, 1.95, 2.3), 1.8), sw = eio(seg(t, 2.8, 3.15));
+    // the person, swapped for a clone on "replaceable", then an army of identical clones floods in
+    const pin = back(seg(t, 1.95, 2.3), 1.8), sw = eio(seg(t, 2.8, 3.1));
     if (t > 1.9 && t < 4.75) {
+      const ARMY = [[140, 1010], [940, 1010], [330, 960], [750, 960], [80, 1450], [1000, 1450], [250, 1600], [830, 1600], [540, 1720], [110, 1230]];
+      ARMY.forEach(([px, py], i) => { const k = back(seg(t, 3.5 + i * 0.035, 3.8 + i * 0.035), 2); if (k > 0) bean(x, px, py + Math.sin(t * 3 + i) * 6, 105 * k, { t: t + i, ...cloneOpt, look: [(540 - px) / 600, (1220 - py) / 900], blink: blinkAt(t, i * 0.4) }); });
       bean(x, lerp(540, -260, sw), 1220, 170 * pin, { t, look: [0.2, -0.3], blink: blinkAt(t, 0.3), shock: sw > 0.1 });
       if (sw > 0) bean(x, lerp(1340, 540, sw), 1220, 170, { t, ...cloneOpt, look: [-0.3, -0.2] });
-      const pk = eo(seg(t, 3.56, 3.9));
-      if (pk > 0) [[-1, 200], [1, 880]].forEach(([d, px]) => bean(x, px, 1290, 120 * pk, { t: t + d, ...cloneOpt, look: [-d * 0.6, 0] }));
     }
     // the crowd working harder and longer
     const cw = eo(seg(t, 4.62, 5.0));
@@ -1256,6 +1261,7 @@
     const wo = seg(t, T.dive[0] + 0.2, T.dive[1]) * (1 - seg(t, T.dive[1], T.dive[1] + 0.35));
     if (wo > 0) { const g = x.createRadialGradient(540, 960, 0, 540, 960, 1100); g.addColorStop(0, H.rgba('#ffffff', wo)); g.addColorStop(0.5, H.rgba('#8ff0ff', wo * 0.95)); g.addColorStop(1, H.rgba('#6a4cff', wo * 0.9)); x.fillStyle = g; x.fillRect(0, 0, PW, PH); }
     // quick white flashes on the hardest hits
+    for (const tf of [1.04, 2.8]) { const f = Math.max(0, 1 - Math.abs(t - tf - 0.03) / 0.14); if (f > 0) { const g = x.createRadialGradient(540, 960, 300, 540, 960, 1200); g.addColorStop(0, 'rgba(255,59,92,0)'); g.addColorStop(1, H.rgba(C.red, 0.55 * f)); x.fillStyle = g; x.fillRect(0, 0, PW, PH); } }
     for (const tf of [0.02, 29.92, 34.12, 67.06]) { const f = Math.max(0, 1 - Math.abs(t - tf - 0.03) / 0.12); if (f > 0) { x.fillStyle = H.rgba('#ffffff', 0.35 * f); x.fillRect(0, 0, PW, PH); } }
     drawHL(x, t);
     finish(x, PW, PH, t);
@@ -1270,7 +1276,10 @@
     const soft = (t, g = 0.5) => k.play('pop', t, { f: 520, gain: 0.35 * g });
     // the hook hit, kept low and short so the first words stay clear
     k.play('thud', 0.0, { f: 110, gain: 0.35 }); k.play('swish', 0.0, { dur: 0.2, gain: 0.4 });
-    k.play('stamp', 1.04, { gain: 0.25 });
+    for (let tt = 0.05; tt < 1.0; tt += 0.09) k.play('tick', tt, { f: 4400, gain: 0.08 });
+    k.play('stamp', 1.04, { gain: 0.32 });
+    k.play('thud', 2.8, { f: 90, gain: 0.25 });
+    for (let i = 0; i < 10; i++) k.play('pop', 3.5 + i * 0.035, { f: 480 + i * 30, gain: 0.08 });
     whoosh(1.9, 0.35, 0.4);
     k.play('swish', 2.8, { dur: 0.25, gain: 0.35 });
     whoosh(4.6, 0.5, 0.35, 1200);
@@ -1328,12 +1337,14 @@
     k.play('sparkle', 67.2, { gain: 0.3, n: 6 });
   }
 
+
   window.FV = { explainer: explainerV, scoreSound: scoreSoundV, DURATION: DUR, W: PW, H: PH };
 })();
 
 </script>
 <script>
-const BEATS = [
+// Storyboard beats for this short: one entry per beat, key = the frame time shown in the panel.
+window.BEATS = [
   { name: 'Hook', t0: 0, t1: 4.6, key: 3.3,
     text: '"YOU\'RE NOT PAID / FOR YOUR TIME" (124 px) → "YOU\'RE PAID FOR HOW / REPLACEABLE / YOU ARE".',
     flow: ['cont', 'Frame 0 opens punched-in on a big alarm clock with the first words already on screen and a short camera shake. On "time" a red X stamps the clock. On "you\'re paid" the clock flies off and a character pops in; on "replaceable" they slide out and an identical grey look-alike slides into their place, then two more peek in.'],
@@ -1375,6 +1386,22 @@ const BEATS = [
     flow: ['cut', 'A vertical whip up past the top of the stairs lands on a horizon planet. A big clock spins through extra hours over a tired character; "+ MORE HOURS" gets crossed out. On "becoming the person" the clock turns into a gold $ clock, coins pop, and a price tag climbs $ / HR → $$$$ / HR in step with "hours… are… worth more". Flare, burst and shake on "worth"; held about 1 s.'],
     sound: 'Whoosh, quick quiet ticks for the spinning clock, a light stamp on "more hours", sparkle as it turns gold, coin clinks, a soft impact + warm chord on "worth more".' },
 ];
+
+window.SB = {
+  headline: "You're paid for how <em>replaceable</em> you are",
+  notes: [
+    '<b>Timing comes from your voice track.</b> I transcribed it with word timestamps; every headline word lands on the frame it is spoken. Length is 68.4 s (voice 68.0 s plus a short hold).',
+    '<b>On-screen text:</b> English, key lines only (no full captions), keywords coloured: gold = value, red = the trap, cyan = hard to replace.', "<b>Safe zones:</b> headlines sit between y 230 and 650 of 1920 and subjects in the middle; the bottom fifth and right edge stay clear for TikTok's caption and buttons.", "<b>Sound:</b> voice first. Effects only (no music), short and quiet, and ducked under the voice in the final mix; I'll check the levels with a meter before delivering.", '<b>Illustrative, not data:</b> the price tags ($ to $$$$) and the "+7 DAYS" calendar illustrate the script\'s ideas; no salary figures are claimed.',
+    'Hook: the very first frame already shows the clock and "YOU\'RE NOT PAID", so the thumbnail and the first swipe both carry the hook.',
+  ],
+};
+
+</script>
+<script>
+const BEATS = window.BEATS;
+document.getElementById('sbh').innerHTML = window.SB.headline;
+document.getElementById('sbm').textContent = 'Flat-Vector Science · 9:16 TikTok · storyboard · ' + BEATS.length + ' beats · ' + Math.round(FV.DURATION) + ' s';
+document.getElementById('sbn').innerHTML = window.SB.notes.map((n) => '<li>' + n + '</li>').join('');
 const fmt = (s) => s.toFixed(2).replace(/\.?0+$/, '') + ' s';
 (async () => {
   for (const f of ['900 64px "Nunito"', '700 28px "Nunito"', '600 32px "Fredoka"']) { try { await document.fonts.load(f, 'AaZz09$'); } catch (e) {} }

@@ -1,0 +1,81 @@
+<title>/*TITLE*/ Storyboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700;900&display=block">
+<style>
+  /* Layout: a production storyboard sheet; two-column grid of 16:9 key frames, notes under each. Single deliberate dark look matching the piece. */
+  :root {
+    --bg: #0d0f33; --panel: #17154a; --line: #2e2a6e; --fg: #eeeaff; --muted: #b3aade; --gold: #ffd23f; --cyan: #7ff0ff; --pink: #ff8fb8;
+    --display: "Nunito", "Fredoka", system-ui, sans-serif; --body: "Nunito", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding-block: 32px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  header.top { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; justify-content: space-between; margin-bottom: 24px; }
+  h1 { font-family: var(--display); font-weight: 900; font-size: clamp(26px, 4vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; }
+  h1 em { color: var(--gold); font-style: normal; }
+  .meta { color: var(--muted); font-weight: 700; letter-spacing: 0.04em; font-size: 13px; text-transform: uppercase; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 24px; }
+  .beat { background: var(--panel); border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+  .beat canvas { width: 100%; height: auto; aspect-ratio: 9 / 16; display: block; background: #090b2c; }
+  .notes { padding: 14px 18px 18px; display: grid; gap: 8px; }
+  .head { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+  .num { font-family: var(--display); font-weight: 900; font-size: 22px; color: var(--gold); }
+  .name { font-weight: 900; font-size: 17px; }
+  .time { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--cyan); font-weight: 700; font-size: 13px; }
+  dl { margin: 0; display: grid; grid-template-columns: 1fr; gap: 6px 12px; }
+  dt { color: var(--muted); font-weight: 700; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; padding-top: 6px; }
+  dd { margin: 0; min-width: 0; }
+  dd q { quotes: none; font-weight: 900; color: #fff; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; padding: 1px 8px; border-radius: 99px; margin-right: 6px; background: var(--line); color: var(--cyan); }
+  .tag.cut { color: var(--pink); }
+  .assume { margin-top: 32px; background: var(--panel); border-radius: 18px; padding: 18px 22px; }
+  .assume h2 { font-family: var(--display); font-size: 20px; margin: 0 0 8px; }
+  .assume ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+  .assume b { color: var(--gold); }
+  @media (max-width: 520px) { dl { grid-template-columns: 1fr; } dt { padding-top: 6px; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1 id="sbh"></h1>
+    <div class="meta" id="sbm"></div>
+  </header>
+  <div class="grid" id="grid"></div>
+  <section class="assume">
+    <h2>Notes and assumptions</h2>
+    <ul id="sbn"></ul>
+  </section>
+</div>
+
+<script>
+/*HARNESS*/
+</script>
+<script>
+/*BASE*/
+/*VERTICAL*/
+/*SCENES*/
+</script>
+<script>
+/*BEATS*/
+</script>
+<script>
+const BEATS = window.BEATS;
+document.getElementById('sbh').innerHTML = window.SB.headline;
+document.getElementById('sbm').textContent = 'Flat-Vector Science · 9:16 TikTok · storyboard · ' + BEATS.length + ' beats · ' + Math.round(FV.DURATION) + ' s';
+document.getElementById('sbn').innerHTML = window.SB.notes.map((n) => '<li>' + n + '</li>').join('');
+const fmt = (s) => s.toFixed(2).replace(/\.?0+$/, '') + ' s';
+(async () => {
+  for (const f of ['900 64px "Nunito"', '700 28px "Nunito"', '600 32px "Fredoka"']) { try { await document.fonts.load(f, 'AaZz09$'); } catch (e) {} }
+  const grid = document.getElementById('grid');
+  BEATS.forEach((b, i) => {
+    const el = document.createElement('article'); el.className = 'beat';
+    const cv = document.createElement('canvas'); cv.width = 1080; cv.height = 1920; el.appendChild(cv);
+    const n = document.createElement('div'); n.className = 'notes';
+    n.innerHTML = `<div class="head"><span class="num">${i + 1}</span><span class="name"></span><span class="time">${fmt(b.t0)} – ${fmt(b.t1)} · frame ${fmt(b.key)}</span></div>
+      <dl><dt>On screen</dt><dd class="tx"></dd><dt>${i ? 'From ' + i : 'Opening'}</dt><dd><span class="tag ${b.flow[0] === 'cut' ? 'cut' : ''}">${b.flow[0] === 'cut' ? 'Scene change' : 'Continuous'}</span><span class="fl"></span></dd><dt>Sound</dt><dd class="sd"></dd></dl>`;
+    n.querySelector('.name').textContent = b.name; n.querySelector('.tx').textContent = b.text; n.querySelector('.fl').textContent = b.flow[1]; n.querySelector('.sd').textContent = b.sound;
+    el.appendChild(n); grid.appendChild(el);
+    FV.explainer(cv.getContext('2d'), 1080, 1920, b.key);
+  });
+})();
+</script>
