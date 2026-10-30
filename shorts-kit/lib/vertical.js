@@ -86,8 +86,8 @@
       const n = h.lines.length, lh = h.px * 1.14;
       h.lines.forEach((ln, li) => {
         x.font = F(900, h.px);
-        const sp = x.measureText(' ').width * 1.15;
-        const ws = ln.map((p) => { x.font = F(900, h.px * p.sc); return x.measureText(p.w).width + h.px * p.sc * 0.05; });
+        const sp = x.measureText(' ').width * 1.6;
+        const ws = ln.map((p) => { x.font = F(900, h.px * p.sc); return x.measureText(p.w).width + h.px * p.sc * 0.08; });
         const tot = ws.reduce((a, b) => a + b, 0) + sp * (ln.length - 1), fit = Math.min(1, 900 / tot);
         const ly = h.y + (li - (n - 1) / 2) * lh * (ln.some((p) => p.sc > 1.1) ? 1.08 : 1);
         let wx = 540 - (tot * fit) / 2;
