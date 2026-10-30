@@ -834,6 +834,6 @@ export const Video01: React.FC = () => (
     <Problem />
     <NotComesIn />
     <Stays />
-    <Audio src={staticFile("voice-01.mp3")} />
+    <Audio src={staticFile("mix-01.wav")} />
   </AbsoluteFill>
 );
