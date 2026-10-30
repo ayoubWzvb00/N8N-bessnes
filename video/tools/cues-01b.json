@@ -1,0 +1,527 @@
+[
+ {
+  "t": 0.5,
+  "type": "whoosh",
+  "gain": -28
+ },
+ {
+  "t": 2.67,
+  "type": "whoosh",
+  "gain": -28
+ },
+ {
+  "t": 2.8,
+  "type": "pop",
+  "gain": -24
+ },
+ {
+  "t": 2.85,
+  "type": "shimmer",
+  "gain": -28
+ },
+ {
+  "t": 3.42,
+  "type": "whoosh",
+  "gain": -25
+ },
+ {
+  "t": 7.05,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 7.53,
+  "type": "whoosh",
+  "gain": -25
+ },
+ {
+  "t": 8.35,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 9.3,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 10.42,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 11.17,
+  "type": "whoosh",
+  "gain": -25
+ },
+ {
+  "t": 12.6,
+  "type": "shimmer",
+  "gain": -28
+ },
+ {
+  "t": 13.52,
+  "type": "whoosh",
+  "gain": -25
+ },
+ {
+  "t": 14.6,
+  "type": "crack",
+  "gain": -21
+ },
+ {
+  "t": 15.98,
+  "type": "whoosh",
+  "gain": -25
+ },
+ {
+  "t": 17.75,
+  "type": "swipe",
+  "gain": -26
+ },
+ {
+  "t": 18.35,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 20.31,
+  "type": "whoosh",
+  "gain": -25
+ },
+ {
+  "t": 21.9,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 23.62,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 23.95,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 24.68,
+  "type": "whoosh",
+  "gain": -25
+ },
+ {
+  "t": 26.95,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 27.6,
+  "type": "whoosh",
+  "gain": -25
+ },
+ {
+  "t": 29.8,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 30.55,
+  "type": "whoosh",
+  "gain": -28
+ },
+ {
+  "t": 30.95,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 32.25,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 33.7,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 33.95,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 35.15,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 35.56,
+  "type": "whoosh",
+  "gain": -25
+ },
+ {
+  "t": 35.8,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 35.94,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 36.08,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 36.22,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 36.36,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 37.9,
+  "type": "whoosh",
+  "gain": -28
+ },
+ {
+  "t": 38.2,
+  "type": "swipe",
+  "gain": -26
+ },
+ {
+  "t": 38.75,
+  "type": "shimmer",
+  "gain": -28
+ },
+ {
+  "t": 39.05,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 40.45,
+  "type": "whoosh",
+  "gain": -25
+ },
+ {
+  "t": 41.85,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 42.1,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 42.32,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 43.2,
+  "type": "swipe",
+  "gain": -26
+ },
+ {
+  "t": 43.7,
+  "type": "whoosh",
+  "gain": -25
+ },
+ {
+  "t": 45.3,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 45.36,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 45.42,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 45.48,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 45.54,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 45.6,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 45.66,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 46.8,
+  "type": "whoosh",
+  "gain": -28
+ },
+ {
+  "t": 48.9,
+  "type": "clink",
+  "gain": -29
+ },
+ {
+  "t": 49.02,
+  "type": "clink",
+  "gain": -29
+ },
+ {
+  "t": 49.14,
+  "type": "clink",
+  "gain": -29
+ },
+ {
+  "t": 51.0,
+  "type": "crack",
+  "gain": -24
+ },
+ {
+  "t": 51.6,
+  "type": "whoosh",
+  "gain": -25
+ },
+ {
+  "t": 52.0,
+  "type": "tick",
+  "gain": -26
+ },
+ {
+  "t": 53.15,
+  "type": "tick",
+  "gain": -26
+ },
+ {
+  "t": 53.5,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 54.3,
+  "type": "tick",
+  "gain": -26
+ },
+ {
+  "t": 55.45,
+  "type": "tick",
+  "gain": -26
+ },
+ {
+  "t": 55.97,
+  "type": "whoosh",
+  "gain": -25
+ },
+ {
+  "t": 56.8,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 57.6,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 58.85,
+  "type": "whoosh",
+  "gain": -25
+ },
+ {
+  "t": 59.2,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 60.85,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 62.1,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 62.88,
+  "type": "whoosh",
+  "gain": -25
+ },
+ {
+  "t": 63.184,
+  "type": "clink",
+  "gain": -31
+ },
+ {
+  "t": 63.428,
+  "type": "clink",
+  "gain": -31
+ },
+ {
+  "t": 63.55,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 63.815,
+  "type": "clink",
+  "gain": -31
+ },
+ {
+  "t": 63.95,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 64.45,
+  "type": "clink",
+  "gain": -31
+ },
+ {
+  "t": 64.46,
+  "type": "clink",
+  "gain": -31
+ },
+ {
+  "t": 64.906,
+  "type": "clink",
+  "gain": -31
+ },
+ {
+  "t": 64.982,
+  "type": "clink",
+  "gain": -31
+ },
+ {
+  "t": 65.0,
+  "type": "pop",
+  "gain": -25
+ },
+ {
+  "t": 65.246,
+  "type": "clink",
+  "gain": -31
+ },
+ {
+  "t": 65.251,
+  "type": "clink",
+  "gain": -31
+ },
+ {
+  "t": 65.406,
+  "type": "clink",
+  "gain": -31
+ },
+ {
+  "t": 65.45,
+  "type": "swipe",
+  "gain": -26
+ },
+ {
+  "t": 65.713,
+  "type": "clink",
+  "gain": -31
+ },
+ {
+  "t": 65.775,
+  "type": "clink",
+  "gain": -31
+ },
+ {
+  "t": 65.833,
+  "type": "clink",
+  "gain": -31
+ },
+ {
+  "t": 65.836,
+  "type": "clink",
+  "gain": -31
+ },
+ {
+  "t": 66.05,
+  "type": "whoosh",
+  "gain": -25
+ },
+ {
+  "t": 66.216,
+  "type": "clink",
+  "gain": -30
+ },
+ {
+  "t": 66.367,
+  "type": "clink",
+  "gain": -30
+ },
+ {
+  "t": 66.392,
+  "type": "clink",
+  "gain": -30
+ },
+ {
+  "t": 66.46,
+  "type": "clink",
+  "gain": -30
+ },
+ {
+  "t": 66.535,
+  "type": "clink",
+  "gain": -30
+ },
+ {
+  "t": 66.853,
+  "type": "clink",
+  "gain": -30
+ },
+ {
+  "t": 66.889,
+  "type": "clink",
+  "gain": -30
+ },
+ {
+  "t": 67.119,
+  "type": "clink",
+  "gain": -30
+ },
+ {
+  "t": 67.157,
+  "type": "clink",
+  "gain": -30
+ },
+ {
+  "t": 67.3,
+  "type": "clink",
+  "gain": -30
+ },
+ {
+  "t": 67.4,
+  "type": "tick",
+  "gain": -27
+ },
+ {
+  "t": 67.7,
+  "type": "whoosh",
+  "gain": -28
+ },
+ {
+  "t": 67.9,
+  "type": "shimmer",
+  "gain": -28
+ }
+]

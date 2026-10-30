@@ -6,7 +6,7 @@ import { Beach, FuelGauge, Shadow, Stays, Tap, VIDEO01B_END } from "./scenesC";
 
 export const VIDEO01B_DURATION = VIDEO01B_END;
 
-export const Video01b: React.FC<{ audio?: string }> = ({ audio = "voice-01b.wav" }) => (
+export const Video01b: React.FC<{ audio?: string }> = ({ audio = "mix-01b.wav" }) => (
   <AbsoluteFill style={{ background: "#000" }}>
     <Hook />
     <Believe />
