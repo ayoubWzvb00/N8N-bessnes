@@ -102,7 +102,65 @@ def swipe():
     return norm(noise * np.sin(np.pi * t) ** 3)
 
 
-GEN = {"whoosh": whoosh, "tick": tick, "pop": pop, "clink": clink, "shimmer": shimmer, "crack": crack, "swipe": swipe}
+def click():
+    # lock / latch click: short bright transient + tiny resonance
+    n = int(0.06 * SR)
+    t = np.arange(n) / SR
+    burst = rng.standard_normal(n) * env(n, 0.0003, 0.004)
+    ring = np.sin(2 * np.pi * 3100 * t) * env(n, 0.0005, 0.012) * 0.5
+    return norm(burst + ring)
+
+
+def creak():
+    # door swing: low wobbling tone with breathy noise
+    n = int(0.45 * SR)
+    t = np.arange(n) / SR
+    f = 180 + 90 * np.sin(2 * np.pi * 3 * t) + 120 * t
+    tone = np.sin(2 * np.pi * np.cumsum(f) / SR) * (0.6 + 0.4 * np.sin(2 * np.pi * 37 * t))
+    air = lowpass(rng.standard_normal(n), 900) * 0.4
+    shape = np.sin(np.pi * np.linspace(0, 1, n)) ** 1.5
+    return norm((tone * 0.7 + air) * shape)
+
+
+def kaching():
+    # register bell: two bright partials + drawer clunk
+    n = int(0.9 * SR)
+    t = np.arange(n) / SR
+    bell = sum(np.sin(2 * np.pi * f * t) * w for f, w in [(2093, 1), (2637, 0.7), (4186, 0.35)]) * env(n, 0.002, 0.25)
+    clunk = lowpass(rng.standard_normal(n), 600) * env(n, 0.001, 0.03)
+    return norm(bell + clunk * 0.8)
+
+
+def printer():
+    # receipt printer: fast ticks over a soft buzz
+    n = int(0.9 * SR)
+    t = np.arange(n) / SR
+    buzz = np.sign(np.sin(2 * np.pi * 120 * t)) * 0.15 * lowpass(np.ones(n), 400)
+    ticks = np.zeros(n)
+    for k in range(0, n, int(SR / 38)):
+        m = min(n - k, int(0.004 * SR))
+        ticks[k : k + m] += rng.standard_normal(m) * np.linspace(1, 0, m)
+    shape = np.minimum(1, np.minimum(t / 0.03, (0.9 - t) / 0.08))
+    return norm((buzz + ticks * 0.6) * np.clip(shape, 0, 1))
+
+
+def snap():
+    # mousetrap snap: hard click + wooden thump
+    n = int(0.25 * SR)
+    t = np.arange(n) / SR
+    hit = rng.standard_normal(n) * env(n, 0.0002, 0.006)
+    thump = np.sin(2 * np.pi * (140 * np.exp(-t * 20) + 70) * t) * env(n, 0.001, 0.06)
+    return norm(hit * 0.9 + thump)
+
+
+def beep():
+    n = int(0.12 * SR)
+    t = np.arange(n) / SR
+    return norm(np.sin(2 * np.pi * 1760 * t) * np.minimum(1, np.minimum(t / 0.005, (0.12 - t) / 0.02)))
+
+
+GEN = {"click": click, "creak": creak, "kaching": kaching, "printer": printer, "snap": snap, "beep": beep,
+       "whoosh": whoosh, "tick": tick, "pop": pop, "clink": clink, "shimmer": shimmer, "crack": crack, "swipe": swipe}
 
 
 def read_wav(p):

@@ -5,7 +5,7 @@ import { Complain, Economist, HappyTip, Hook, NoTip, SameResult, Struggle, YearO
 
 export const VIDEO02_DURATION = VIDEO02_END;
 
-export const Video02: React.FC<{ audio?: string }> = ({ audio = "voice-02.wav" }) => (
+export const Video02: React.FC<{ audio?: string }> = ({ audio = "mix-02.wav" }) => (
   <AbsoluteFill style={{ background: "#000" }}>
     <Hook />
     <Economist />
