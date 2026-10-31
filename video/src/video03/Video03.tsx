@@ -4,7 +4,7 @@ import { Airfield, ArmorMove, DangerSign, Diagram, Feed, Ghosts, Hook, LastPlane
 
 export const VIDEO03_DURATION = VIDEO03_END;
 
-export const Video03: React.FC<{ audio?: string }> = ({ audio = "voice-03.wav" }) => (
+export const Video03: React.FC<{ audio?: string }> = ({ audio = "mix-03.wav" }) => (
   <AbsoluteFill style={{ background: "#000" }}>
     <Hook />
     <Airfield />

@@ -159,7 +159,86 @@ def beep():
     return norm(np.sin(2 * np.pi * 1760 * t) * np.minimum(1, np.minimum(t / 0.005, (0.12 - t) / 0.02)))
 
 
-GEN = {"click": click, "creak": creak, "kaching": kaching, "printer": printer, "snap": snap, "beep": beep,
+def air():
+    # rushing air during the jump
+    n = int(0.7 * SR)
+    x = lowpass(rng.standard_normal(n), 1400)
+    t = np.linspace(0, 1, n)
+    return norm(x * np.sin(np.pi * t) ** 2)
+
+
+def thud():
+    # landing on the ground: low body hit
+    n = int(0.3 * SR)
+    t = np.arange(n) / SR
+    body = np.sin(2 * np.pi * (110 * np.exp(-t * 14) + 45) * t) * env(n, 0.001, 0.07)
+    grit = lowpass(rng.standard_normal(n), 700) * env(n, 0.001, 0.03)
+    return norm(body + grit * 0.6)
+
+
+def applause():
+    # crowd clapping that is cut off abruptly (no tail) for the reveal
+    n = int(1.65 * SR)
+    out = np.zeros(n)
+    for _ in range(420):
+        i = int(rng.uniform(0, n - 0.03 * SR))
+        m = int(0.012 * SR)
+        clap = lowpass(rng.standard_normal(m), rng.uniform(1500, 3500)) * np.linspace(1, 0, m) ** 2
+        out[i : i + m] += clap * rng.uniform(0.3, 1)
+    swell = np.minimum(1, np.arange(n) / (0.25 * SR))
+    return norm(out * swell)
+
+
+def wind():
+    # hollow canyon wind
+    n = int(2.2 * SR)
+    t = np.arange(n) / SR
+    x = lowpass(rng.standard_normal(n), 380)
+    gust = 0.6 + 0.4 * np.sin(2 * np.pi * 0.7 * t)
+    shape = np.minimum(1, np.minimum(t / 0.4, (2.2 - t) / 0.8))
+    return norm(x * gust * np.clip(shape, 0, 1))
+
+
+def boom():
+    # low dramatic tone for the reveal
+    n = int(1.6 * SR)
+    t = np.arange(n) / SR
+    x = sum(np.sin(2 * np.pi * f * t) * w for f, w in [(55, 1), (82.4, 0.5), (110, 0.25)])
+    return norm(x * env(n, 0.02, 0.5))
+
+
+def gunshot():
+    # distant, muffled shot
+    n = int(0.35 * SR)
+    t = np.arange(n) / SR
+    crack_ = lowpass(rng.standard_normal(n), 1100) * env(n, 0.0005, 0.03)
+    body = np.sin(2 * np.pi * (80 * np.exp(-t * 10) + 40) * t) * env(n, 0.002, 0.09)
+    return norm(crack_ * 0.8 + body)
+
+
+def engine():
+    # distant propeller drone
+    n = int(2.4 * SR)
+    t = np.arange(n) / SR
+    f = 62 + 4 * np.sin(2 * np.pi * 0.3 * t)
+    saw = 2 * ((np.cumsum(f) / SR) % 1) - 1
+    x = lowpass(saw, 500) * (0.75 + 0.25 * np.sin(2 * np.pi * 18 * t))
+    shape = np.sin(np.pi * np.linspace(0, 1, n)) ** 1.2
+    return norm(x * shape)
+
+
+def clank():
+    # heavy metal plate
+    n = int(0.6 * SR)
+    t = np.arange(n) / SR
+    x = sum(np.sin(2 * np.pi * f * t) * w for f, w in [(310, 1), (523, 0.7), (871, 0.5), (1290, 0.3)])
+    hit = lowpass(rng.standard_normal(n), 2000) * env(n, 0.0005, 0.01)
+    return norm(x * env(n, 0.001, 0.12) + hit)
+
+
+GEN = {"air": air, "thud": thud, "applause": applause, "wind": wind, "boom": boom, "gunshot": gunshot,
+       "engine": engine, "clank": clank,
+       "click": click, "creak": creak, "kaching": kaching, "printer": printer, "snap": snap, "beep": beep,
        "whoosh": whoosh, "tick": tick, "pop": pop, "clink": clink, "shimmer": shimmer, "crack": crack, "swipe": swipe}
 
 
@@ -180,7 +259,7 @@ def main():
     cache = {}
     for c in cues:
         kind = c["type"]
-        if kind in ("clink", "tick") or kind not in cache:
+        if kind in ("clink", "tick", "gunshot") or kind not in cache:
             cache[kind] = GEN[kind]()
         s = cache[kind] * 10 ** (c["gain"] / 20)
         i = int(c["t"] * SR)
