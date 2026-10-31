@@ -2,7 +2,7 @@ import React from "react";
 import { lerp, prog, useTime } from "../lib/anim";
 import { FONT, WHITE } from "../lib/ui";
 import { At, camPath, Caps, fastOut, Layer, Num, Shot, Stroke, Tag } from "../video01b/kit";
-import { Human, mixPose, POSES } from "./Human";
+import { Human, mixPose, poseAt, POSES } from "./Human";
 import { Bubble, CoinG, Door, Floor, INK, Jar, KeyRing, LockPlate, MID, PriceTag, Receipt, WallClock } from "./props";
 
 const SOFT = { a: 0.05 };
@@ -24,66 +24,61 @@ const Toss: React.FC<{ t: number; at: number; dur?: number; a: [number, number];
   return <CoinG x={x} y={y} r={r} squash={Math.abs(Math.cos(p * 14))} />;
 };
 
-/* 1 · HOOK — "People will pay you less for being good at your job." (0 – 2.95) */
+/* 1 · HOOK — "People will pay you less for being good at your job." (0 – 2.95)
+   One clear moment, big on a phone: the expert opens the door in two seconds,
+   the customer is unimpressed, and the price collapses from $100 to $40. */
 
 export const Hook: React.FC = () => {
   const t = useTime();
   const floor = 900;
-  const snap = prog(t, 0.02, 0.22, fastOut);
-  const drop = prog(t, 1.1, 0.5, (x) => x * x);
-  const price = Math.round(100 - 60 * prog(t, 1.15, 0.6));
-  const work = Math.sin(t * 16) * 8;
+  const doorX = 1300;
+  const snap = prog(t, 0.05, 0.2, fastOut);
+  const tagIn = prog(t, 0.6, 0.3, fastOut);
+  const fall = prog(t, 1.08, 0.55, (x) => x * x);
+  const price = Math.round(100 - 60 * prog(t, 1.12, 0.45));
+  const badge = prog(t, 1.9, 0.3, fastOut);
   const cam = camPath([
-    { t: 0, x: 1640, y: 680, z: 2.2 },
-    { t: 0.42, x: 1630, y: 670, z: 2.05, ease: (x) => x },
-    { t: 0.95, x: 960, y: 560, z: 1.0 },
-    { t: 3.2, x: 960, y: 560, z: 1.04, ease: (x) => x },
+    { t: 0, x: doorX - 40, y: floor - 160, z: 3.1 },
+    { t: 0.42, x: doorX - 40, y: floor - 165, z: 2.9, ease: (x) => x },
+    { t: 0.85, x: 1110, y: floor - 230, z: 1.7 },
+    { t: 3.2, x: 1110, y: floor - 235, z: 1.78, ease: (x) => x },
   ]);
   return (
-    <Shot id="h2" from={0} to={2.95} outDir="L" cam={cam} light={{ x: 960, y: 560, r: 900, a: 0.04 }}>
+    <Shot id="h2" from={0} to={2.95} outDir="L" cam={cam} light={{ x: 1110, y: floor - 230, r: 640, a: 0.06 }}>
       <Layer>
-        <Stroke t={t} at={0.55} dur={0.5} d="M960 120 V980" w={3} color={MID} dash="10 12" />
-        {/* LEFT: the apprentice, one hour, happy customer */}
-        <Floor y={floor} x1={90} x2={900} />
-        <Door x={760} floor={floor} open={0} />
-        <Human
-          x={600}
-          y={floor}
-          pose={{ ...POSES.workKneel, armF: [70 + work, 25], armB: [55 - work, 40] }}
-          face="strain"
-          cap
-          sweat={1}
-          t={t}
-          scale={1.6}
-        />
-        <Human x={330} y={floor} pose={POSES.give} face="happy" hair scale={1.6} hold={t < 1.5 ? "coin" : undefined} />
-        <Toss t={t} at={1.5} dur={0.6} a={[460, 700]} b={[600, 780]} h={120} r={20} />
-        {/* RIGHT: the expert, two seconds, unhappy customer */}
-        <Floor y={floor} x1={1020} x2={1840} />
-        <Door x={1720} floor={floor} open={snap} warm={snap * 0.35} />
-        <Human x={1560} y={floor} pose={POSES.workStand} face="smug" cap hold="key" scale={1.6} />
-        <Human x={1250} y={floor} pose={POSES.armsCrossed} face="angry" hair scale={1.6} />
-        {/* price tags */}
-        <g opacity={prog(t, 0.75, 0.3)}>
-          <PriceTag x={600} y={420} text="$100" size={46} rot={-4} />
-          <text x={600} y={505} textAnchor="middle" fontFamily={FONT} fontWeight={700} fontSize={30} fill={WHITE} opacity={prog(t, 2.0, 0.3)}>
-            + TIP
-          </text>
-          <g transform={`translate(0, ${drop * 60})`}>
-            <PriceTag x={1560} y={420} text={`$${price}`} size={46} rot={6 + drop * 16} />
+        <Floor y={floor} x1={600} x2={1700} />
+        <Door x={doorX} floor={floor} open={snap} warm={snap * 0.45} />
+        {snap > 0 && snap < 1
+          ? [0, 1, 2].map((k) => (
+              <line key={k} x1={doorX + 90} x2={doorX + 130} y1={floor - 260 + k * 40} y2={floor - 270 + k * 40} stroke={WHITE} strokeWidth={5} strokeLinecap="round" />
+            ))
+          : null}
+        <text x={doorX + 200} y={floor - 230} textAnchor="middle" fontFamily={FONT} fontWeight={700} fontSize={30} letterSpacing="0.16em" fill={WHITE} opacity={prog(t, 0.22, 0.2)}>
+          2 SECONDS
+        </text>
+        <Human x={1160} y={floor} pose={POSES.workStand} face="smug" cap hold="key" scale={1.6} />
+        <Human x={870} y={floor} pose={poseAt(t, [[0, POSES.give], [1.15, POSES.armsCrossed]], 0.25)} face={t < 1.1 ? "neutral" : "angry"} hair scale={1.6} hold={t < 1.1 ? "coin" : undefined} />
+        {/* the price, then it collapses */}
+        {tagIn > 0 ? (
+          <g opacity={tagIn} transform={`translate(0, ${fall * 36}) rotate(${fall * 10}, 960, 450)`}>
+            <PriceTag x={960} y={450} text={`$${price}`} size={60} rot={-4} />
           </g>
-        </g>
+        ) : null}
+        {fall > 0.3 ? (
+          <g stroke={WHITE} strokeWidth={5} strokeLinecap="round" opacity={1 - prog(t, 1.7, 0.4)}>
+            <path d="M1070 400 l30 -24 M1084 450 h38 M1070 500 l30 24" />
+          </g>
+        ) : null}
+        {/* expert badge */}
+        {badge > 0 ? (
+          <g transform={`translate(1180, ${floor - 400}) scale(${0.7 + 0.3 * badge})`} opacity={badge}>
+            <rect x={-92} y={-26} width={184} height={52} rx={26} fill={WHITE} />
+            <text y={10} textAnchor="middle" fontFamily={FONT} fontWeight={700} fontSize={24} letterSpacing="0.16em" fill={INK}>
+              ★ EXPERT
+            </text>
+          </g>
+        ) : null}
       </Layer>
-      <At t={t} at={0.6} x={480} y={180}>
-        <Caps size={40} color={WHITE} weight={600}>
-          1 hour
-        </Caps>
-      </At>
-      <At t={t} at={0.7} x={1440} y={180}>
-        <Caps size={40} color={WHITE} weight={600}>
-          2 seconds
-        </Caps>
-      </At>
     </Shot>
   );
 };
@@ -259,7 +254,7 @@ export const HappyTip: React.FC = () => {
         <Floor y={floor} x1={260} x2={1660} />
         <Door x={1420} floor={floor} open={1} warm={0.35} />
         <Human x={720} y={floor} pose={POSES.carry} face="happy" cap bag scale={1.5} />
-        <Human x={1160} y={floor} pose={t > 15.9 ? POSES.give : POSES.stand} face="happy" hair dir={-1} scale={1.5} hold={t > 15.9 && t < 17.2 ? "coin" : undefined} />
+        <Human x={1160} y={floor} pose={poseAt(t, [[0, POSES.stand], [15.75, POSES.give]])} face="happy" hair dir={-1} scale={1.5} hold={t > 15.9 && t < 17.2 ? "coin" : undefined} />
         {/* heart */}
         <g transform={`translate(1160, ${470 - heart * 30}) scale(${heart})`} opacity={heart}>
           <path d="M0 18 C-40 -10 -28 -44 0 -24 C28 -44 40 -10 0 18 Z" fill={WHITE} />
@@ -407,7 +402,7 @@ export const NoTip: React.FC = () => {
       <Layer>
         <line x1={520} x2={1500} y1={720} y2={720} stroke={WHITE} strokeWidth={6} strokeLinecap="round" />
         <Jar x={900} y={716} label="TIPS" />
-        <Human x={1230} y={980} pose={back > 0.5 ? POSES.armsCrossed : POSES.reach} face={back > 0.5 ? "smug" : "neutral"} hair dir={-1} scale={1.7} />
+        <Human x={1230} y={980} pose={poseAt(t, [[0, POSES.reach], [28.2, POSES.armsCrossed]])} face={back > 0.5 ? "smug" : "neutral"} hair dir={-1} scale={1.7} />
         {back < 0.95 ? <CoinG x={coinX} y={coinY} r={20} /> : null}
         {back > 0.6 ? (
           <g stroke={WHITE} strokeWidth={8} strokeLinecap="round" opacity={prog(t, 28.5, 0.25)}>

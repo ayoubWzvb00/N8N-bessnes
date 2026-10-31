@@ -1,4 +1,5 @@
 import React from "react";
+import { useTime } from "../lib/anim";
 import { WHITE } from "../lib/ui";
 
 /**
@@ -35,7 +36,8 @@ export const POSES: Record<string, Pose> = {
   proud: { lean: -5, head: -6, armF: [-34, 92], armB: [34, -92], legF: [10, 0], legB: [-10, 0] },
   sad: { lean: 10, head: 18, armF: [4, 4], armB: [-4, 6], legF: [2, 0], legB: [-2, 0] },
   reach: { lean: 14, armF: [105, -20], armB: [-10, 10], legF: [14, 0], legB: [-12, 0] },
-  surprised: { lean: -8, head: -10, armF: [150, -60], armB: [-150, 60], legF: [6, 0], legB: [-6, 0] },
+  surprised: { lean: -8, head: -10, armF: [40, 112], armB: [-12, 14], legF: [6, 0], legB: [-6, 0] },
+  thumbsUp: { lean: -2, armF: [55, 85], armB: [-6, 8], legF: [6, 0], legB: [-6, 0] },
 };
 
 const L = { torso: 66, neck: 30, upperArm: 44, foreArm: 40, thigh: 50, shin: 48 };
@@ -57,7 +59,7 @@ export const mixPose = (a: Pose, b: Pose, k: number): Pose => {
   };
 };
 
-const FaceMarks: React.FC<{ face: Face; cx: number; cy: number }> = ({ face, cx, cy }) => {
+const FaceMarks: React.FC<{ face: Face; cx: number; cy: number; blink?: boolean }> = ({ face, cx, cy, blink }) => {
   const ink = "#0a0a0a";
   const eyeY = cy - 2;
   const ex1 = cx + 4;
@@ -81,8 +83,14 @@ const FaceMarks: React.FC<{ face: Face; cx: number; cy: number }> = ({ face, cx,
   }[face];
   return (
     <g stroke={ink} strokeLinecap="round" fill="none">
-      <circle cx={ex1} cy={eyeY} r={2.6} fill={ink} stroke="none" />
-      <circle cx={ex2} cy={eyeY} r={2.6} fill={ink} stroke="none" />
+      {blink ? (
+        <path d={`M${ex1 - 3} ${eyeY} h6 M${ex2 - 3} ${eyeY} h6`} strokeWidth={2.4} />
+      ) : (
+        <>
+          <circle cx={ex1} cy={eyeY} r={2.6} fill={ink} stroke="none" />
+          <circle cx={ex2} cy={eyeY} r={2.6} fill={ink} stroke="none" />
+        </>
+      )}
       <path d={`M${ex1 - 4} ${eyeY + b[0]} L${ex1 + 3} ${eyeY + b[1]}`} strokeWidth={2.4} />
       <path d={`M${ex2 - 3} ${eyeY + b[2]} L${ex2 + 4} ${eyeY + b[3]}`} strokeWidth={2.4} />
       {face === "surprised" ? <circle cx={cx + 10} cy={cy + 12} r={4} strokeWidth={2.4} /> : <path d={mouth} strokeWidth={2.6} />}
@@ -106,7 +114,23 @@ export const Human: React.FC<{
   dim?: number; // 0 = white, 1 = grey
   glowK?: number;
   hold?: "coin" | "key";
-}> = ({ x, y, pose = POSES.stand, face = "neutral", scale = 1, dir = 1, cap, tie, hair, bag, sweat = 0, t = 0, dim = 0, glowK = 0.35, hold }) => {
+  idle?: boolean;
+}> = ({ x, y, pose: basePose = POSES.stand, face = "neutral", scale = 1, dir = 1, cap, tie, hair, bag, sweat = 0, t: tProp, dim = 0, glowK = 0.35, hold, idle = true }) => {
+  const now = useTime();
+  const t = tProp ?? now;
+  // idle life: breathing, small head movement, blinking (desynced per character)
+  const seed = (x * 0.013) % 6.28;
+  const breath = idle ? Math.sin(t * 2.1 + seed) : 0;
+  const pose: Pose = idle
+    ? {
+        ...basePose,
+        lean: (basePose.lean ?? 0) + breath * 1.3,
+        head: (basePose.head ?? 0) + Math.sin(t * 1.3 + seed * 2) * 2.5,
+        armF: basePose.armF ? [basePose.armF[0] + breath * 2, basePose.armF[1]] : basePose.armF,
+        armB: basePose.armB ? [basePose.armB[0] - breath * 2, basePose.armB[1]] : basePose.armB,
+      }
+    : basePose;
+  const blink = idle && (t * 0.31 + seed * 0.17) % 1 < 0.04;
   const body = dim > 0 ? `rgb(${255 - dim * 120},${255 - dim * 120},${255 - dim * 120})` : WHITE;
   const far = `rgb(${190 - dim * 80},${190 - dim * 80},${190 - dim * 80})`;
   const crouch = pose.crouch ?? 0;
@@ -177,7 +201,7 @@ export const Human: React.FC<{
           <path d={`M${head.x + 10} ${head.y - 14} h30`} stroke={body} strokeWidth={7} strokeLinecap="round" />
         </g>
       ) : null}
-      <FaceMarks face={face} cx={head.x} cy={head.y + 2} />
+      <FaceMarks face={face} cx={head.x} cy={head.y + 2} blink={blink} />
       <path d={armF.d} stroke="#0a0a0a" strokeWidth={21} strokeLinecap="round" strokeLinejoin="round" fill="none" />
       <path d={armF.d} stroke={body} strokeWidth={15} strokeLinecap="round" strokeLinejoin="round" fill="none" />
       <circle cx={armF.e.x} cy={armF.e.y} r={8.5} fill={body} />
@@ -214,4 +238,17 @@ export const handPos = (x: number, y: number, pose: Pose, scale = 1, dir: 1 | -1
   const k = step(sh.x, sh.y, u, L.upperArm);
   const e = step(k.x, k.y, u + v, L.foreArm);
   return { x: x + e.x * scale * dir, y: y + e.y * scale };
+};
+
+/** Pose from a timeline of keyframes, blending over `blend` seconds at each change. */
+export const poseAt = (t: number, keys: [number, Pose][], blend = 0.3): Pose => {
+  let cur = keys[0][1];
+  for (let i = 1; i < keys.length; i++) {
+    const [at, p] = keys[i];
+    if (t < at) break;
+    const k = Math.min(1, (t - at) / blend);
+    const e = k * k * (3 - 2 * k);
+    cur = mixPose(cur, p, e);
+  }
+  return cur;
 };

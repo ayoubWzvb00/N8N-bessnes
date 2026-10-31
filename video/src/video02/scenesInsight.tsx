@@ -3,7 +3,7 @@ import { interpolate } from "remotion";
 import { lerp, prog, useTime } from "../lib/anim";
 import { FONT, WHITE } from "../lib/ui";
 import { At, camPath, Caps, fastOut, Layer, Num, Shot, Stroke, Tag } from "../video01b/kit";
-import { Human, POSES } from "./Human";
+import { handPos, Human, poseAt, POSES } from "./Human";
 import { CoinG, Door, Floor, Hourglass, INK, KeyRing, MID, PriceTag } from "./props";
 
 const SOFT = { a: 0.05 };
@@ -114,52 +114,50 @@ export const Register: React.FC = () => {
           <circle r={20} fill={WHITE} />
         </svg>
       </At>
-      <At t={t} at={35.6} x={1560} y={360}>
-        <Num size={44}>KA-CHING</Num>
-      </At>
     </Shot>
   );
 };
 
-/* 13 · "And the better you get, the less effort they see." (36.28 – 38.95) */
+/* 13 · "And the better you get, the less effort they see." (36.28 – 38.95)
+   The customer watches the expert work so fast it looks like nothing; her thought: "That's it?" */
 
 export const BlurHands: React.FC = () => {
   const t = useTime();
   const speed = 10 + 40 * prog(t, 36.7, 1.2);
-  const blind = prog(t, 37.8, 0.35);
+  const think = prog(t, 37.75, 0.35, fastOut);
   const cam = camPath([
-    { t: 36.28, x: 1060, y: 600, z: 1.2 },
-    { t: 39.2, x: 1080, y: 590, z: 1.3, ease: (x) => x },
+    { t: 36.28, x: 900, y: 640, z: 1.35 },
+    { t: 39.2, x: 910, y: 630, z: 1.45, ease: (x) => x },
   ]);
   const ghosts = [0, 1, 2, 3, 4];
   return (
-    <Shot id="blur" from={36.28} to={38.95} inDir="L" outDir="U" cam={cam} light={{ x: 760, y: 560, r: 520, ...SOFT }}>
+    <Shot id="blur" from={36.28} to={38.95} inDir="L" outDir="U" cam={cam} light={{ x: 900, y: 600, r: 520, ...SOFT }}>
       <Layer>
-        <Door x={980} floor={880} open={0} />
+        <Floor y={880} x1={400} x2={1400} />
+        <Door x={1110} floor={880} open={0} />
         {ghosts.map((g) => {
           const ph = t * speed - g * 0.18;
           return (
-            <g key={g} opacity={g === 0 ? 1 : 0.25 * (1 - g / 5) * prog(t, 36.8, 0.5)}>
-              <Human x={760} y={880} pose={{ ...POSES.workStand, armF: [75 + Math.sin(ph) * 22, 10], armB: [60 + Math.cos(ph) * 18, 25] }} face="smug" cap scale={1.5} glowK={0} />
+            <g key={g} opacity={g === 0 ? 1 : 0.28 * (1 - g / 5) * prog(t, 36.8, 0.5)}>
+              <Human x={950} y={880} pose={{ ...POSES.workStand, armF: [75 + Math.sin(ph) * 22, 10], armB: [60 + Math.cos(ph) * 18, 25] }} face="smug" cap scale={1.5} glowK={0} idle={g === 0} />
             </g>
           );
         })}
-        {/* the viewer's eye */}
-        <g transform="translate(1450, 380)">
-          <path d="M-110 0 Q0 -90 110 0 Q0 90 -110 0 Z" fill={INK} stroke={WHITE} strokeWidth={6} />
-          <circle r={34 * (1 - blind)} fill={WHITE} />
-          <text y={30} textAnchor="middle" fontFamily={FONT} fontWeight={800} fontSize={84} fill={WHITE} opacity={blind}>
-            ?
-          </text>
-        </g>
+        <Human x={640} y={880} pose={POSES.armsCrossed} face={think > 0.5 ? "neutral" : "surprised"} hair scale={1.5} />
+        {/* her thought bubble */}
+        {think > 0 ? (
+          <g opacity={think} transform={`translate(560, ${470 - think * 16})`}>
+            <circle cx={60} cy={110} r={9} fill={INK} stroke={WHITE} strokeWidth={3} />
+            <circle cx={78} cy={84} r={13} fill={INK} stroke={WHITE} strokeWidth={3} />
+            <rect x={-30} y={-50} width={260} height={100} rx={50} fill={INK} stroke={WHITE} strokeWidth={4} />
+            <text x={100} y={14} textAnchor="middle" fontFamily={FONT} fontWeight={700} fontSize={36} fill={WHITE}>
+              That's it?
+            </text>
+          </g>
+        ) : null}
       </Layer>
-      <At t={t} at={36.8} x={760} y={440}>
+      <At t={t} at={36.8} x={950} y={520}>
         <Tag size={22}>Skill ↑</Tag>
-      </At>
-      <At t={t} at={37.9} x={1450} y={540}>
-        <Caps size={22} color={WHITE}>
-          Effort seen ↓
-        </Caps>
       </At>
     </Shot>
   );
@@ -209,11 +207,6 @@ export const Trap: React.FC = () => {
           </g>
         ) : null}
       </Layer>
-      <At t={t} at={39.5} x={1060} y={830}>
-        <Caps size={24} color={WHITE}>
-          Being good
-        </Caps>
-      </At>
       <At t={t} at={39.95} x={960} y={330}>
         <Tag size={30}>The trap</Tag>
       </At>
@@ -230,8 +223,8 @@ export const LooksEasy: React.FC = () => {
   const cam = camPath([
     { t: 41.28, x: 760, y: 560, z: 1.1 },
     { t: 43.1, x: 760, y: 560, z: 1.15, ease: (x) => x },
-    { t: 43.45, x: 1380, y: 540, z: 1.15 },
-    { t: 46.3, x: 1380, y: 540, z: 1.2, ease: (x) => x },
+    { t: 43.45, x: 1500, y: 600, z: 1.3 },
+    { t: 46.3, x: 1500, y: 600, z: 1.38, ease: (x) => x },
   ]);
   const pile = Array.from({ length: 34 }, (_, i) => ({ x: 560 + ((i * 47) % 400), y: 840 - Math.floor(i / 9) * 40 - ((i * 13) % 20), r: (i * 37) % 60 - 30 }));
   return (
@@ -279,13 +272,8 @@ export const LooksEasy: React.FC = () => {
             <rect key={i} x={-140 + (i % 3) * 96} y={-70 + Math.floor(i / 3) * 70} width={84} height={56} rx={10} fill="none" stroke={MID} strokeWidth={3} />
           ))}
         </g>
-        <Human x={1700} y={900} pose={calc > 0.5 ? POSES.surprised : POSES.stand} face={calc > 0.5 ? "surprised" : "neutral"} hair dir={-1} scale={1.3} />
+        <Human x={1720} y={900} pose={poseAt(t, [[0, POSES.stand], [44.9, POSES.surprised]])} face={calc > 0.5 ? "surprised" : "neutral"} hair dir={-1} scale={1.5} />
       </Layer>
-      <At t={t} at={42.75} x={760} y={150} opacity={1 - prog(t, 43.2, 0.3)}>
-        <Caps size={26} color={WHITE}>
-          They only see 2 seconds
-        </Caps>
-      </At>
     </Shot>
   );
 };
@@ -318,7 +306,7 @@ export const Podium: React.FC = () => {
         ))}
         <Human x={700} y={780} pose={POSES.stand} face="neutral" scale={1.1} dim={0.6} glowK={0} />
         <Human x={1220} y={820} pose={POSES.stand} face="neutral" scale={1.1} dim={0.6} glowK={0} />
-        <Human x={960} y={700} pose={t > 48.3 ? POSES.sad : POSES.proud} face={t > 48.3 ? "strain" : "smug"} cap scale={1.35} />
+        <Human x={960} y={700} pose={poseAt(t, [[0, POSES.proud], [48.3, POSES.sad]])} face={t > 48.3 ? "strain" : "smug"} cap scale={1.35} />
         {/* gold medal */}
         <g transform="translate(975, 560)">
           <circle r={18} fill={WHITE} stroke={INK} strokeWidth={3} />
@@ -330,51 +318,44 @@ export const Podium: React.FC = () => {
       <At t={t} at={48.05} x={1360} y={420}>
         <Tag size={24}>Underpaid</Tag>
       </At>
-      <At t={t} at={49.8} x={960} y={220}>
-        <Caps size={28} color={WHITE} weight={600}>
-          The best
-        </Caps>
-      </At>
     </Shot>
   );
 };
 
-/* 17 · "Of course, getting faster isn't the problem." (50.95 – 53.38) */
+/* 17 · "Of course, getting faster isn't the problem." (50.95 – 53.38) — the expert, proud of his speed, gets a ✓ */
 
 export const FastShoe: React.FC = () => {
   const t = useTime();
-  const flap = Math.sin(t * 18) * 18;
+  const open = prog(t, 51.2, 0.2, fastOut);
+  const ok = prog(t, 52.35, 0.3, fastOut);
+  const thumb = handPos(900, 880, POSES.thumbsUp, 1.5);
   const cam = camPath([
-    { t: 50.95, x: 960, y: 540, z: 1.1 },
-    { t: 53.6, x: 960, y: 540, z: 1.2, ease: (x) => x },
+    { t: 50.95, x: 960, y: 640, z: 1.4 },
+    { t: 53.6, x: 960, y: 630, z: 1.5, ease: (x) => x },
   ]);
   return (
-    <Shot id="shoe" from={50.95} to={53.38} inDir="U" outDir="L" cam={cam} light={{ x: 920, y: 540, r: 500, ...SOFT }}>
+    <Shot id="shoe" from={50.95} to={53.38} inDir="U" outDir="L" cam={cam} light={{ x: 960, y: 600, r: 520, ...SOFT }}>
       <Layer>
-        {[0, 1, 2, 3].map((k) => {
-          const ph = (t * 2.4 + k * 0.25) % 1;
-          return <line key={k} x1={560 - ph * 200} x2={700 - ph * 200} y1={500 + k * 40} y2={500 + k * 40} stroke={WHITE} strokeWidth={4} strokeLinecap="round" opacity={1 - ph} />;
-        })}
-        <g transform={`translate(960, ${560 + Math.sin(t * 6) * 10})`} stroke={WHITE} strokeWidth={6} strokeLinejoin="round" strokeLinecap="round">
-          {/* wing */}
-          <g transform={`rotate(${-20 + flap}, -40, -60)`}>
-            <path d="M-40 -60 Q-120 -170 -10 -190 Q-30 -150 20 -150 Q0 -110 40 -100 Q0 -80 -40 -60 Z" fill={INK} />
+        <Floor y={880} x1={500} x2={1420} />
+        <Door x={1120} floor={880} open={open} warm={open * 0.4} />
+        <Human x={900} y={880} pose={poseAt(t, [[0, POSES.workStand], [51.6, POSES.thumbsUp]])} face="happy" cap scale={1.5} />
+        {/* thumbs up at the raised hand */}
+        {t > 51.75 ? (
+          <g transform={`translate(${thumb.x}, ${thumb.y - 10})`} opacity={prog(t, 51.75, 0.2)}>
+            <rect x={-14} y={-6} width={30} height={30} rx={8} fill={WHITE} stroke={INK} strokeWidth={3} />
+            <rect x={-6} y={-30} width={11} height={28} rx={5} fill={WHITE} stroke={INK} strokeWidth={3} />
           </g>
-          {/* sneaker */}
-          <path d="M-170 40 Q-170 -10 -120 -20 L-60 -70 Q-20 -90 10 -60 L40 -30 Q130 -20 170 20 Q180 50 150 60 H-150 Q-170 60 -170 40 Z" fill={INK} />
-          <path d="M-170 46 H170" strokeWidth={10} />
-          <path d="M-30 -50 l30 20 M-50 -30 l30 20" strokeWidth={4} />
-        </g>
+        ) : null}
+        {ok > 0 ? (
+          <g transform={`translate(780, 560) scale(${0.6 + 0.4 * ok})`} opacity={ok}>
+            <circle r={52} fill={WHITE} />
+            <path d="M-24 2 L-6 20 L26 -16" fill="none" stroke={INK} strokeWidth={9} strokeLinecap="round" strokeLinejoin="round" />
+          </g>
+        ) : null}
       </Layer>
-      <At t={t} at={52.3} x={1230} y={420} g={0.4}>
-        <svg width={110} height={110} viewBox="-55 -55 110 110">
-          <circle r={48} fill="none" stroke={WHITE} strokeWidth={5} />
-          <path d="M-22 2 L-6 18 L24 -16" fill="none" stroke={WHITE} strokeWidth={7} strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </At>
-      <At t={t} at={51.7} x={960} y={250}>
-        <Caps size={28} color={WHITE} weight={600}>
-          Faster is fine
+      <At t={t} at={51.5} x={960} y={360}>
+        <Caps size={30} color={WHITE} weight={600}>
+          Fast is good
         </Caps>
       </At>
     </Shot>
@@ -504,7 +485,7 @@ export const Difference: React.FC = () => {
         {/* expert + happy customer tipping (mirror of the hook) */}
         <Human x={860} y={880} pose={POSES.proud} face="smug" cap scale={1.45} />
         <KeyRing x={900} y={760} n={10} r={22} swing={Math.sin(t * 4) * 10} />
-        <Human x={520} y={880} pose={t > 66.0 ? POSES.give : POSES.stand} face="happy" hair scale={1.45} hold={t > 66.0 && t < 66.7 ? "coin" : undefined} />
+        <Human x={520} y={880} pose={poseAt(t, [[0, POSES.stand], [65.85, POSES.give]])} face="happy" hair scale={1.45} hold={t > 66.0 && t < 66.7 ? "coin" : undefined} />
         {t > 66.7 && t < 67.4 ? <CoinG x={lerp(t, [66.7, 67.4], [640, 830], (x) => x)} y={700 - Math.sin(Math.PI * prog(t, 66.7, 0.7, (x) => x)) * 120} r={16} /> : null}
       </Layer>
       <At t={t} at={67.35} x={860} y={470}>
