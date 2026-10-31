@@ -1,0 +1,12 @@
+# Script 03 — The advice of successful people might be the worst advice you can follow
+
+**Style:** story-led hybrid (true story: Abraham Wald, WWII bombers — survivorship bias)
+**Words:** 219
+
+## EN
+
+The advice of successful people might be the worst advice you can follow. During World War Two, the US military studied the planes that came back from battle. They were covered in bullet holes, mostly on the wings and the body. So the plan seemed simple. Add more armor where the planes were getting hit. But a mathematician named Abraham Wald noticed something nobody else did. They were only looking at the planes that survived. The planes that got hit in the engines never came back at all. So the armor didn't belong where the holes were. It belonged where they weren't. And this is exactly how most people learn about money. Every day, you hear from the people who made it. The founder who dropped out of college. The investor who went all in. The creator who quit their job. But you never hear from the thousands who did the exact same thing and failed, because nobody interviews them. That's the trap. When you only study the winners, risky decisions start to look like smart ones. Of course, successful people can still teach you a lot. Just don't copy what they did without asking who else tried it. Because the most important lessons aren't always on the planes that came back. Sometimes, they're in the ones that didn't.
+
+## AR
+
+نصائح الناجحين قد تكون أسوأ نصيحة يمكنك اتباعها. خلال الحرب العالمية الثانية، درس الجيش الأمريكي الطائرات التي عادت من المعارك. كانت مليئة بثقوب الرصاص، معظمها في الأجنحة وجسم الطائرة. فبدت الخطة بسيطة: أضيفوا دروعاً حيث تُصاب الطائرات. لكن عالم رياضيات اسمه أبراهام والد لاحظ شيئاً لم يلاحظه أحد: كانوا ينظرون فقط إلى الطائرات التي نجت. أما الطائرات التي أُصيبت في المحركات فلم تعد أبداً. إذن الدروع لا مكانها حيث توجد الثقوب، بل حيث لا توجد. وهذه بالضبط الطريقة التي يتعلم بها معظم الناس عن المال. كل يوم تسمع من الذين نجحوا: المؤسس الذي ترك الجامعة، والمستثمر الذي راهن بكل شيء، وصانع المحتوى الذي ترك وظيفته. لكنك لا تسمع أبداً من الآلاف الذين فعلوا الشيء نفسه تماماً وفشلوا، لأن أحداً لا يجري معهم مقابلات. هذا هو الفخ: عندما تدرس الفائزين فقط، تبدأ القرارات الخطرة في الظهور كأنها قرارات ذكية. بالطبع، ما زال بإمكان الناجحين أن يعلموك الكثير. فقط لا تنسخ ما فعلوه دون أن تسأل: من غيرهم جرّب ذلك؟ لأن أهم الدروس ليست دائماً على الطائرات التي عادت، بل أحياناً في تلك التي لم تعد.
