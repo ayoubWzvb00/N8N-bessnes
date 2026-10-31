@@ -8,6 +8,7 @@ import { Video01, VIDEO01_DURATION } from "./video01/Video01";
 import { Video01b, VIDEO01B_DURATION } from "./video01b/Video01b";
 import { CharacterSheet } from "./video02/CharacterSheet";
 import { Video02, VIDEO02_DURATION } from "./video02/Video02";
+import { Video03, VIDEO03_DURATION } from "./video03/Video03";
 
 export const FPS = 60;
 
@@ -33,6 +34,14 @@ export const Root: React.FC = () => (
       id="Video02"
       component={Video02}
       durationInFrames={Math.round(VIDEO02_DURATION * FPS)}
+      fps={FPS}
+      width={1920}
+      height={1080}
+    />
+    <Composition
+      id="Video03"
+      component={Video03}
+      durationInFrames={Math.round(VIDEO03_DURATION * FPS)}
       fps={FPS}
       width={1920}
       height={1080}

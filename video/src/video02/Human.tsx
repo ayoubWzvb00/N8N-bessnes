@@ -37,6 +37,10 @@ export const POSES: Record<string, Pose> = {
   sad: { lean: 10, head: 18, armF: [4, 4], armB: [-4, 6], legF: [2, 0], legB: [-2, 0] },
   reach: { lean: 14, armF: [105, -20], armB: [-10, 10], legF: [14, 0], legB: [-12, 0] },
   surprised: { lean: -8, head: -10, armF: [40, 112], armB: [-12, 14], legF: [6, 0], legB: [-6, 0] },
+  cheer: { lean: -4, head: -8, armF: [160, 10], armB: [-160, -10], legF: [6, 0], legB: [-6, 0] },
+  clap: { lean: 2, armF: [70, 70], armB: [60, 80], legF: [4, 0], legB: [-4, 0] },
+  sitSad: { lean: 24, head: 26, armF: [40, 60], armB: [30, 70], legF: [90, -90], legB: [86, -88], crouch: 1 },
+  crouchLook: { lean: 40, head: 30, armF: [95, 0], armB: [40, 40], legF: [70, -110], legB: [30, -100], crouch: 0.9 },
   thumbsUp: { lean: -2, armF: [55, 85], armB: [-6, 8], legF: [6, 0], legB: [-6, 0] },
 };
 
@@ -115,7 +119,8 @@ export const Human: React.FC<{
   glowK?: number;
   hold?: "coin" | "key";
   idle?: boolean;
-}> = ({ x, y, pose: basePose = POSES.stand, face = "neutral", scale = 1, dir = 1, cap, tie, hair, bag, sweat = 0, t: tProp, dim = 0, glowK = 0.35, hold, idle = true }) => {
+  glasses?: boolean;
+}> = ({ x, y, pose: basePose = POSES.stand, face = "neutral", scale = 1, dir = 1, cap, tie, hair, bag, sweat = 0, t: tProp, dim = 0, glowK = 0.35, hold, idle = true, glasses }) => {
   const now = useTime();
   const t = tProp ?? now;
   // idle life: breathing, small head movement, blinking (desynced per character)
@@ -202,6 +207,13 @@ export const Human: React.FC<{
         </g>
       ) : null}
       <FaceMarks face={face} cx={head.x} cy={head.y + 2} blink={blink} />
+      {glasses ? (
+        <g stroke="#0a0a0a" strokeWidth={2.2} fill="none">
+          <circle cx={head.x + 4} cy={head.y} r={6} />
+          <circle cx={head.x + 16} cy={head.y} r={6} />
+          <path d={`M${head.x + 10} ${head.y} h0 M${head.x - 2} ${head.y - 1} l-12 -2`} />
+        </g>
+      ) : null}
       <path d={armF.d} stroke="#0a0a0a" strokeWidth={21} strokeLinecap="round" strokeLinejoin="round" fill="none" />
       <path d={armF.d} stroke={body} strokeWidth={15} strokeLinecap="round" strokeLinejoin="round" fill="none" />
       <circle cx={armF.e.x} cy={armF.e.y} r={8.5} fill={body} />
