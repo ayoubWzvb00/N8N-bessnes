@@ -30,6 +30,12 @@ export const POSES: Record<string, Pose> = {
   shrug: { armF: [-30, 120], armB: [30, -120], legF: [3, 0], legB: [-3, 0] },
   wipeBrow: { lean: -6, head: -8, armF: [120, 94], armB: [-10, 10], legF: [6, 0], legB: [-6, 0] },
   carry: { armF: [8, 4], armB: [-10, 20], legF: [3, 0], legB: [-3, 0] },
+  sit: { lean: 2, armF: [55, 45], armB: [45, 50], legF: [90, -90], legB: [86, -88], crouch: 1 },
+  sitWrite: { lean: 12, head: 10, armF: [70, 30], armB: [60, 45], legF: [90, -90], legB: [86, -88], crouch: 1 },
+  proud: { lean: -5, head: -6, armF: [-34, 92], armB: [34, -92], legF: [10, 0], legB: [-10, 0] },
+  sad: { lean: 10, head: 18, armF: [4, 4], armB: [-4, 6], legF: [2, 0], legB: [-2, 0] },
+  reach: { lean: 14, armF: [105, -20], armB: [-10, 10], legF: [14, 0], legB: [-12, 0] },
+  surprised: { lean: -8, head: -10, armF: [150, -60], armB: [-150, 60], legF: [6, 0], legB: [-6, 0] },
 };
 
 const L = { torso: 66, neck: 30, upperArm: 44, foreArm: 40, thigh: 50, shin: 48 };
