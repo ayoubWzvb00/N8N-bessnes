@@ -20,7 +20,7 @@ for (const s of times) {
     imageFormat: "jpeg",
     jpegQuality: 85,
     browserExecutable,
-    scale: 0.5,
+    scale: Number(process.env.STILL_SCALE ?? 0.5),
   });
   process.stdout.write(".");
 }
